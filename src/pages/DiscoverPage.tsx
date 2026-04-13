@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, SlidersHorizontal, Sparkles, Eye } from "lucide-react";
+import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock } from "lucide-react";
 import CompanionCard from "@/components/CompanionCard";
 import { useCompanions } from "@/hooks/use-companions";
 import { useRecommendations } from "@/hooks/use-recommendations";
@@ -13,18 +13,26 @@ const SERVICE_OPTIONS = [
   "Wine Tasting", "Weekend Getaway", "Business Event", "Photography",
 ];
 
-const RecommendedSection = ({
+/** Extract city name from a location string like "Miami, FL" */
+function extractCity(location: string | null | undefined): string {
+  if (!location) return "";
+  return location.split(",")[0].trim().toLowerCase();
+}
+
+const HorizontalSection = ({
   title,
   subtitle,
   icon,
   companions,
   reasons,
+  badge,
 }: {
   title: string;
   subtitle?: string;
   icon: React.ReactNode;
   companions: Companion[];
   reasons?: Record<string, string>;
+  badge?: string;
 }) => {
   if (companions.length === 0) return null;
 
@@ -32,8 +40,15 @@ const RecommendedSection = ({
     <div className="mb-6">
       <div className="flex items-center gap-2 mb-3">
         {icon}
-        <div>
-          <h2 className="font-display font-semibold text-foreground text-sm">{title}</h2>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="font-display font-semibold text-foreground text-sm">{title}</h2>
+            {badge && (
+              <span className="text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full gradient-gold text-primary-foreground">
+                {badge}
+              </span>
+            )}
+          </div>
           {subtitle && <p className="text-[10px] text-muted-foreground">{subtitle}</p>}
         </div>
       </div>
@@ -55,7 +70,7 @@ const RecommendedSection = ({
 
 const DiscoverPage = () => {
   const { data: companions = [], isLoading } = useCompanions();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { data: recommendations, isLoading: recsLoading } = useRecommendations();
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -78,12 +93,11 @@ const DiscoverPage = () => {
     );
   };
 
-  // Build recommended companions list
+  // ── AI Recommendations ──
   const recommendedCompanions = (recommendations?.recommended || [])
     .map((id) => companions.find((c) => c.id === id))
     .filter(Boolean) as Companion[];
 
-  // Build "because you viewed" sections
   const becauseYouViewedSections = (recommendations?.becauseYouViewed || [])
     .map((byv) => ({
       ...byv,
@@ -95,13 +109,58 @@ const DiscoverPage = () => {
     .slice(0, 2);
 
   const hasRecommendations = user && (recommendedCompanions.length > 0 || becauseYouViewedSections.length > 0);
+
+  // ── Location-aware sections ──
+  const userCity = extractCity(profile?.location);
+
+  const nearYou = useMemo(() => {
+    if (!userCity) return [];
+    return companions
+      .filter((c) => extractCity(c.location) === userCity)
+      .slice(0, 8);
+  }, [companions, userCity]);
+
+  const trendingInCity = useMemo(() => {
+    if (!userCity) return [];
+    // Trending = verified companions in user's city, sorted by rate (proxy for popularity)
+    return companions
+      .filter((c) => extractCity(c.location) === userCity && c.verified)
+      .sort((a, b) => b.hourlyRate - a.hourlyRate)
+      .slice(0, 6);
+  }, [companions, userCity]);
+
+  const newArrivals = useMemo(() => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const recent = companions
+      .filter((c) => c.createdAt && c.createdAt >= sevenDaysAgo)
+      .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+      .slice(0, 8);
+    // If no truly new profiles, show the most recently created ones
+    if (recent.length === 0) {
+      return [...companions]
+        .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+        .slice(0, 6);
+    }
+    return recent;
+  }, [companions]);
+
   const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceRange[1] < 500;
+  const hasLocationSections = !isSearching && (nearYou.length > 0 || newArrivals.length > 0);
+  const cityDisplayName = profile?.location?.split(",")[0]?.trim();
 
   return (
     <div className="min-h-screen pb-20">
       <header className="sticky top-0 z-30 glass-strong">
         <div className="max-w-lg mx-auto px-4 py-3 space-y-3">
-          <h1 className="font-display text-xl font-bold text-foreground">Discover</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="font-display text-xl font-bold text-foreground">Discover</h1>
+            {userCity && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="w-3 h-3 text-gold" />
+                <span>{cityDisplayName}</span>
+              </div>
+            )}
+          </div>
           <div className="flex gap-2">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -190,7 +249,7 @@ const DiscoverPage = () => {
             className="mb-2"
           >
             {recommendedCompanions.length > 0 && (
-              <RecommendedSection
+              <HorizontalSection
                 title="Recommended for You"
                 subtitle="Curated by AI based on your preferences"
                 icon={<Sparkles className="w-4 h-4 text-gold" />}
@@ -200,7 +259,7 @@ const DiscoverPage = () => {
             )}
 
             {becauseYouViewedSections.map((section) => (
-              <RecommendedSection
+              <HorizontalSection
                 key={section.viewedId}
                 title={`Because you viewed ${section.viewedName}`}
                 icon={<Eye className="w-4 h-4 text-accent" />}
@@ -208,13 +267,6 @@ const DiscoverPage = () => {
                 reasons={recommendations?.reasons}
               />
             ))}
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 my-4">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">All Companions</span>
-              <div className="flex-1 h-px bg-border" />
-            </div>
           </motion.div>
         )}
 
@@ -237,6 +289,54 @@ const DiscoverPage = () => {
               ))}
             </div>
           </div>
+        )}
+
+        {/* Location-aware sections */}
+        {!isSearching && !isLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            {nearYou.length > 0 && (
+              <HorizontalSection
+                title={`Near You${cityDisplayName ? ` in ${cityDisplayName}` : ""}`}
+                subtitle="Companions in your area"
+                icon={<MapPin className="w-4 h-4 text-gold" />}
+                companions={nearYou}
+                badge="Local"
+              />
+            )}
+
+            {trendingInCity.length > 0 && (
+              <HorizontalSection
+                title={`Trending in ${cityDisplayName || "Your City"}`}
+                subtitle="Most popular verified companions"
+                icon={<TrendingUp className="w-4 h-4 text-accent" />}
+                companions={trendingInCity}
+                badge="Hot"
+              />
+            )}
+
+            {newArrivals.length > 0 && (
+              <HorizontalSection
+                title="New Arrivals"
+                subtitle="Recently joined the platform"
+                icon={<Clock className="w-4 h-4 text-gold-light" />}
+                companions={newArrivals}
+                badge="New"
+              />
+            )}
+
+            {/* Divider before full grid */}
+            {(hasRecommendations || hasLocationSections) && (
+              <div className="flex items-center gap-3 my-4">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest">All Companions</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+            )}
+          </motion.div>
         )}
 
         {isLoading ? (
