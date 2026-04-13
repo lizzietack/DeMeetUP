@@ -14,9 +14,10 @@ import {
 import { COUNTRIES, getCountryCurrency } from "@/data/countries";
 
 const SERVICE_OPTIONS = [
-  "Dinner Date", "Travel Companion", "Party Partner", "Social Events",
-  "City Tour", "Fitness Partner", "Concert Buddy", "Art Gallery",
-  "Wine Tasting", "Weekend Getaway", "Business Event", "Photography",
+  "Girlfriend Experience", "Hookup / Meetup", "Short Time", "Overnight Stay",
+  "Nuru Massage", "Sensual Massage", "Happy Ending Massage", "Body-to-Body Massage",
+  "Tantric Massage", "Striptease", "Role Play", "Couples Experience",
+  "BDSM", "Video Call", "Outcall", "Incall",
 ];
 
 type GalleryImage = {
