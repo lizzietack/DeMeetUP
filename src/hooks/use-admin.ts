@@ -81,7 +81,7 @@ export const useAdminUpdateProfile = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId, updates }: { userId: string; updates: Record<string, any> }) => {
-      const { error } = await supabase.from("profiles").update(updates).eq("user_id", userId);
+      const { error } = await supabase.from("profiles").update(updates as any).eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -96,7 +96,7 @@ export const useAdminUpdateCompanion = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ profileId, updates }: { profileId: string; updates: Record<string, any> }) => {
-      const { error } = await supabase.from("companion_profiles").update(updates).eq("id", profileId);
+      const { error } = await supabase.from("companion_profiles").update(updates as any).eq("id", profileId);
       if (error) throw error;
     },
     onSuccess: () => {
