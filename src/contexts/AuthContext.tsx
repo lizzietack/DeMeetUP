@@ -13,6 +13,12 @@ interface Profile {
   bio: string | null;
   role: PlatformRole;
   location: string | null;
+  profile_completed: boolean;
+  date_of_birth: string | null;
+  trust_score: number;
+  flagged_for_review: boolean;
+  selfie_verified: boolean;
+  photo_verified: boolean;
 }
 
 interface AuthContextType {
@@ -24,6 +30,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateRole: (role: PlatformRole) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,8 +47,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .select("*")
       .eq("user_id", userId)
       .single();
-    setProfile(data);
+    setProfile(data as Profile | null);
     return data;
+  };
+
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchProfile(user.id);
+    }
   };
 
   useEffect(() => {
@@ -99,7 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, signUp, signIn, signOut, updateRole }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, signUp, signIn, signOut, updateRole, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
