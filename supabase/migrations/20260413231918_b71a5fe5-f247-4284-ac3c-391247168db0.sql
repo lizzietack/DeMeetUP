@@ -1,0 +1,2 @@
+ALTER TABLE public.profiles ADD COLUMN country TEXT DEFAULT NULL;
+ALTER TABLE public.profiles ADD COLUMN currency TEXT DEFAULT NULL;

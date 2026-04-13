@@ -290,7 +290,9 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          country: string | null
           created_at: string
+          currency: string | null
           date_of_birth: string | null
           display_name: string | null
           flagged_for_review: boolean
@@ -309,7 +311,9 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          country?: string | null
           created_at?: string
+          currency?: string | null
           date_of_birth?: string | null
           display_name?: string | null
           flagged_for_review?: boolean
@@ -328,7 +332,9 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          country?: string | null
           created_at?: string
+          currency?: string | null
           date_of_birth?: string | null
           display_name?: string | null
           flagged_for_review?: boolean
