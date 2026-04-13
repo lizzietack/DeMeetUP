@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X } from "lucide-react";
+import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X, ArrowUpDown, ChevronDown } from "lucide-react";
 import CompanionCard from "@/components/CompanionCard";
 import { useCompanions } from "@/hooks/use-companions";
 import { useRecommendations } from "@/hooks/use-recommendations";
