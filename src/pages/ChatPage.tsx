@@ -279,6 +279,13 @@ const ChatPage = () => {
         onSendTip={handleSendTip}
         recipientName={convInfo?.name || ""}
       />
+
+      <ReportUserModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        reportedUserId={convInfo?.otherId || ""}
+        reportedName={convInfo?.name || "User"}
+      />
     </div>
   );
 };
