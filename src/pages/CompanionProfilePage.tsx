@@ -3,8 +3,9 @@ import { motion } from "framer-motion";
 import { ArrowLeft, BadgeCheck, Star, MapPin, Heart, Share2, MessageCircle, Calendar, DollarSign } from "lucide-react";
 import { useCompanion } from "@/hooks/use-companions";
 import { useStartConversation } from "@/hooks/use-chat";
+import { useTrackInteraction } from "@/hooks/use-recommendations";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 const CompanionProfilePage = () => {
