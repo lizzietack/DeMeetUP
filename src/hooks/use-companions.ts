@@ -5,6 +5,7 @@ import type { Companion } from "@/data/mock";
 interface DbCompanionProfile {
   id: string;
   user_id: string;
+  created_at: string;
   hourly_rate: number | null;
   overnight_rate: number | null;
   services: string[];
@@ -28,6 +29,7 @@ function mapToCompanion(row: DbCompanionProfile): Companion {
   return {
     id: row.id,
     userId: row.user_id,
+    createdAt: row.created_at,
     name: row.profiles?.display_name || "Anonymous",
     age: 0, // not stored
     location: row.profiles?.location || "Unknown",
