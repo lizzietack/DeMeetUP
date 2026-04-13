@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldCheck, UserX, Flag, Eye, Lock, ChevronRight, BadgeCheck } from "lucide-react";
+import { ArrowLeft, ShieldCheck, UserX, Flag, Eye, Lock, BadgeCheck, X, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useBlockedUsers, useUnblockUser } from "@/hooks/use-blocked-users";
 import { toast } from "sonner";
 
 const tips = [
@@ -20,9 +23,11 @@ const SafetyPrivacyPage = () => {
 
   const [profileVisible, setProfileVisible] = useState(true);
   const [showOnline, setShowOnline] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [showBlockedPanel, setShowBlockedPanel] = useState(false);
 
-  // Load current values from profile
+  const { data: blockedUsers = [], isLoading: blockedLoading } = useBlockedUsers();
+  const unblock = useUnblockUser();
+
   useEffect(() => {
     if (!user) return;
     supabase
@@ -40,30 +45,19 @@ const SafetyPrivacyPage = () => {
 
   const updatePrivacy = async (field: "profile_visible" | "show_online_status", value: boolean) => {
     if (!user) return;
-    setSaving(true);
-    const update = field === "profile_visible"
-      ? { profile_visible: value }
-      : { show_online_status: value };
-    const { error } = await supabase
-      .from("profiles")
-      .update(update)
-      .eq("user_id", user.id);
-    setSaving(false);
-    if (error) {
-      toast.error("Failed to update setting");
-    } else {
-      toast.success("Privacy setting updated");
+    const update = field === "profile_visible" ? { profile_visible: value } : { show_online_status: value };
+    const { error } = await supabase.from("profiles").update(update).eq("user_id", user.id);
+    if (error) toast.error("Failed to update setting");
+    else toast.success("Privacy setting updated");
+  };
+
+  const handleUnblock = async (blockId: string, name: string) => {
+    try {
+      await unblock.mutateAsync(blockId);
+      toast.success(`${name} has been unblocked`);
+    } catch {
+      toast.error("Failed to unblock user");
     }
-  };
-
-  const handleProfileVisibility = (v: boolean) => {
-    setProfileVisible(v);
-    updatePrivacy("profile_visible", v);
-  };
-
-  const handleOnlineStatus = (v: boolean) => {
-    setShowOnline(v);
-    updatePrivacy("show_online_status", v);
   };
 
   return (
@@ -82,7 +76,7 @@ const SafetyPrivacyPage = () => {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-lg mx-auto px-4 pt-6 space-y-5"
       >
-        {/* Privacy Controls — functional toggles */}
+        {/* Privacy Controls */}
         <div className="glass rounded-xl overflow-hidden">
           <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Privacy Controls
@@ -92,24 +86,48 @@ const SafetyPrivacyPage = () => {
             label="Profile Visibility"
             description={profileVisible ? "Your profile is visible to everyone" : "Your profile is hidden from discovery"}
             checked={profileVisible}
-            onCheckedChange={handleProfileVisibility}
+            onCheckedChange={(v) => { setProfileVisible(v); updatePrivacy("profile_visible", v); }}
           />
           <ToggleRow
             icon={Lock}
             label="Online Status"
             description={showOnline ? "Others can see when you're online" : "Your online status is hidden"}
             checked={showOnline}
-            onCheckedChange={handleOnlineStatus}
+            onCheckedChange={(v) => { setShowOnline(v); updatePrivacy("show_online_status", v); }}
           />
         </div>
 
-        {/* Safety — static for now */}
+        {/* Safety */}
         <div className="glass rounded-xl overflow-hidden">
           <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Safety
           </h2>
-          <StaticRow icon={UserX} label="Blocked Users" description="Manage your block list" />
-          <StaticRow icon={Flag} label="Report Center" description="View or submit reports" />
+          <button
+            onClick={() => setShowBlockedPanel(true)}
+            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/50 transition-colors text-left border-t border-border/30"
+          >
+            <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+              <UserX className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Blocked Users</p>
+              <p className="text-xs text-muted-foreground">
+                {blockedUsers.length === 0 ? "No blocked users" : `${blockedUsers.length} blocked`}
+              </p>
+            </div>
+            <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+              {blockedUsers.length}
+            </span>
+          </button>
+          <button className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/50 transition-colors text-left border-t border-border/30">
+            <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+              <Flag className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Report Center</p>
+              <p className="text-xs text-muted-foreground">View or submit reports</p>
+            </div>
+          </button>
         </div>
 
         {/* Verification */}
@@ -149,22 +167,100 @@ const SafetyPrivacyPage = () => {
           </ul>
         </div>
       </motion.div>
+
+      {/* Blocked Users Panel */}
+      <AnimatePresence>
+        {showBlockedPanel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/80 backdrop-blur-sm px-4 pb-4"
+            onClick={() => setShowBlockedPanel(false)}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md glass rounded-2xl p-5 max-h-[70vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display text-lg font-bold text-foreground">Blocked Users</h2>
+                <button onClick={() => setShowBlockedPanel(false)} className="p-1 rounded-full hover:bg-secondary">
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+                {blockedLoading ? (
+                  <div className="space-y-3 py-4">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="flex items-center gap-3 animate-pulse">
+                        <div className="w-10 h-10 rounded-full bg-secondary" />
+                        <div className="flex-1 space-y-1">
+                          <div className="h-3 bg-secondary rounded w-1/2" />
+                          <div className="h-2 bg-secondary rounded w-1/3" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : blockedUsers.length === 0 ? (
+                  <div className="flex flex-col items-center py-10 text-center">
+                    <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center mb-3">
+                      <UserX className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground mb-1">No blocked users</p>
+                    <p className="text-xs text-muted-foreground max-w-[200px]">
+                      You haven't blocked anyone. You can block users from their profile or chat.
+                    </p>
+                  </div>
+                ) : (
+                  blockedUsers.map((block) => {
+                    const name = block.blocked_profile?.display_name || "Unknown";
+                    const initials = name.slice(0, 2).toUpperCase();
+                    return (
+                      <div key={block.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30">
+                        <Avatar className="w-10 h-10">
+                          {block.blocked_profile?.avatar_url ? (
+                            <AvatarImage src={block.blocked_profile.avatar_url} alt={name} />
+                          ) : null}
+                          <AvatarFallback className="bg-secondary text-foreground text-xs font-display">
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Blocked {new Date(block.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleUnblock(block.id, name)}
+                          disabled={unblock.isPending}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 text-xs"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Unblock
+                        </Button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 const ToggleRow = ({
-  icon: Icon,
-  label,
-  description,
-  checked,
-  onCheckedChange,
+  icon: Icon, label, description, checked, onCheckedChange,
 }: {
-  icon: any;
-  label: string;
-  description: string;
-  checked: boolean;
-  onCheckedChange: (v: boolean) => void;
+  icon: any; label: string; description: string; checked: boolean; onCheckedChange: (v: boolean) => void;
 }) => (
   <div className="flex items-center gap-3 px-4 py-3.5 border-t border-border/30">
     <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
@@ -176,19 +272,6 @@ const ToggleRow = ({
     </div>
     <Switch checked={checked} onCheckedChange={onCheckedChange} />
   </div>
-);
-
-const StaticRow = ({ icon: Icon, label, description }: { icon: any; label: string; description: string }) => (
-  <button className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/50 transition-colors text-left border-t border-border/30">
-    <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
-      <Icon className="w-4 h-4 text-muted-foreground" />
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-sm font-medium text-foreground">{label}</p>
-      <p className="text-xs text-muted-foreground truncate">{description}</p>
-    </div>
-    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-  </button>
 );
 
 export default SafetyPrivacyPage;
