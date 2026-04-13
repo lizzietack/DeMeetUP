@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X } from "lucide-react";
+import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X, ArrowUpDown, ChevronDown } from "lucide-react";
 import CompanionCard from "@/components/CompanionCard";
 import { useCompanions } from "@/hooks/use-companions";
 import { useRecommendations } from "@/hooks/use-recommendations";
@@ -57,6 +57,17 @@ const HorizontalSection = ({
   );
 };
 
+type SortOption = "newest" | "price_low" | "price_high" | "rating";
+
+const SORT_LABELS: Record<SortOption, string> = {
+  newest: "Newest First",
+  price_low: "Price: Low → High",
+  price_high: "Price: High → Low",
+  rating: "Top Rated",
+};
+
+const PAGE_SIZE = 12;
+
 const DiscoverPage = () => {
   const { data: companions = [], isLoading } = useCompanions();
   const { user, profile } = useAuth();
@@ -68,6 +79,10 @@ const DiscoverPage = () => {
   const [priceMax, setPriceMax] = useState(1000);
   const [selectedGender, setSelectedGender] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Unique locations for suggestions
   const uniqueLocations = useMemo(() => {
@@ -85,16 +100,59 @@ const DiscoverPage = () => {
       .slice(0, 5);
   }, [uniqueLocations, locationFilter]);
 
-  const filtered = companions.filter((c) => {
-    if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !c.location.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !c.services.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))) return false;
-    if (selectedServices.length > 0 && !selectedServices.some((s) => c.services.includes(s))) return false;
-    if (c.hourlyRate < priceMin || c.hourlyRate > priceMax) return false;
-    if (selectedGender !== "all" && c.gender !== selectedGender) return false;
-    if (locationFilter && !c.location.toLowerCase().includes(locationFilter.toLowerCase())) return false;
-    return true;
-  });
+  const filtered = useMemo(() => {
+    let result = companions.filter((c) => {
+      if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !c.location.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !c.services.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))) return false;
+      if (selectedServices.length > 0 && !selectedServices.some((s) => c.services.includes(s))) return false;
+      if (c.hourlyRate < priceMin || c.hourlyRate > priceMax) return false;
+      if (selectedGender !== "all" && c.gender !== selectedGender) return false;
+      if (locationFilter && !c.location.toLowerCase().includes(locationFilter.toLowerCase())) return false;
+      return true;
+    });
+
+    // Sort
+    switch (sortBy) {
+      case "price_low":
+        result.sort((a, b) => a.hourlyRate - b.hourlyRate);
+        break;
+      case "price_high":
+        result.sort((a, b) => b.hourlyRate - a.hourlyRate);
+        break;
+      case "rating":
+        result.sort((a, b) => b.rating - a.rating);
+        break;
+      case "newest":
+      default:
+        result.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+        break;
+    }
+    return result;
+  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, sortBy]);
+
+  // Reset visible count when filters/sort change
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, sortBy]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && visibleCount < filtered.length) {
+          setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filtered.length));
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [visibleCount, filtered.length]);
+
+  const visibleCompanions = filtered.slice(0, visibleCount);
 
   const toggleService = (s: string) => {
     setSelectedServices((prev) =>
@@ -471,12 +529,64 @@ const DiscoverPage = () => {
           </div>
         ) : (
           <>
-            <p className="text-xs text-muted-foreground mb-3">{filtered.length} companions found</p>
+            {/* Results header with count + sort */}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-muted-foreground">{filtered.length} companions found</p>
+              <div className="relative">
+                <button
+                  onClick={() => setShowSortMenu(!showSortMenu)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowUpDown className="w-3 h-3" />
+                  <span>{SORT_LABELS[sortBy]}</span>
+                  <ChevronDown className={`w-3 h-3 transition-transform ${showSortMenu ? "rotate-180" : ""}`} />
+                </button>
+                <AnimatePresence>
+                  {showSortMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="absolute right-0 top-full mt-1 z-40 w-44 glass rounded-xl border border-border overflow-hidden shadow-lg"
+                    >
+                      {(Object.keys(SORT_LABELS) as SortOption[]).map((option) => (
+                        <button
+                          key={option}
+                          onClick={() => { setSortBy(option); setShowSortMenu(false); }}
+                          className={`w-full text-left px-3 py-2 text-xs transition-colors
+                            ${sortBy === option ? "text-gold bg-gold/10 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}
+                        >
+                          {SORT_LABELS[option]}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
-              {filtered.map((c, i) => (
+              {visibleCompanions.map((c, i) => (
                 <CompanionCard key={c.id} companion={c} index={i} />
               ))}
             </div>
+
+            {/* Infinite scroll sentinel */}
+            {visibleCount < filtered.length && (
+              <div ref={sentinelRef} className="flex justify-center py-6">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="w-4 h-4 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+                  Loading more...
+                </div>
+              </div>
+            )}
+
+            {visibleCount >= filtered.length && filtered.length > PAGE_SIZE && (
+              <p className="text-center text-[10px] text-muted-foreground py-4">
+                You've seen all {filtered.length} companions
+              </p>
+            )}
+
             {filtered.length === 0 && (
               <div className="text-center py-16 space-y-3">
                 <p className="text-muted-foreground">No companions match your filters</p>
