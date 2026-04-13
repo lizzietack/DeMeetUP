@@ -14,6 +14,8 @@ import BookingPage from "./pages/BookingPage.tsx";
 import DashboardPage from "./pages/DashboardPage.tsx";
 import FeaturedPage from "./pages/FeaturedPage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.tsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
 import RegisterPage from "./pages/RegisterPage.tsx";
 import SelectRolePage from "./pages/SelectRolePage.tsx";
 import CompanionSetupPage from "./pages/CompanionSetupPage.tsx";
@@ -33,7 +35,7 @@ const AppContent = () => {
   const { user } = useAuth();
   const hideNav = location.pathname.startsWith("/chat/") ||
     location.pathname.startsWith("/book/") ||
-    ["/login", "/register", "/select-role", "/companion-setup"].includes(location.pathname);
+    ["/login", "/register", "/select-role", "/companion-setup", "/forgot-password", "/reset-password"].includes(location.pathname);
 
   return (
     <>
@@ -42,6 +44,8 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/select-role" element={<ProtectedRoute><SelectRolePage /></ProtectedRoute>} />
         <Route path="/companion-setup" element={<ProtectedRoute><CompanionSetupPage /></ProtectedRoute>} />
