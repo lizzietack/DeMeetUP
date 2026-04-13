@@ -15,7 +15,7 @@ const SelectRolePage = () => {
     setIsLoading(true);
     await updateRole(selected);
     setIsLoading(false);
-    navigate("/");
+    navigate(selected === "companion" ? "/companion-setup" : "/");
   };
 
   const roles = [
