@@ -30,7 +30,8 @@ const LoginPage = () => {
     if (error) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
     } else {
-      navigate("/");
+      // Auth state change will handle redirect via onboarding guard
+      navigate("/discover", { replace: true });
     }
   };
 
