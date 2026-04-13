@@ -29,6 +29,7 @@ function mapToCompanion(row: DbCompanionProfile): Companion {
   return {
     id: row.id,
     userId: row.user_id,
+    createdAt: row.created_at,
     name: row.profiles?.display_name || "Anonymous",
     age: 0, // not stored
     location: row.profiles?.location || "Unknown",
