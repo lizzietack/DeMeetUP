@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock } from "lucide-react";
+import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X } from "lucide-react";
 import CompanionCard from "@/components/CompanionCard";
 import { useCompanions } from "@/hooks/use-companions";
 import { useRecommendations } from "@/hooks/use-recommendations";
@@ -13,29 +13,18 @@ const SERVICE_OPTIONS = [
   "Wine Tasting", "Weekend Getaway", "Business Event", "Photography",
 ];
 
-/** Extract city name from a location string like "Miami, FL" */
 function extractCity(location: string | null | undefined): string {
   if (!location) return "";
   return location.split(",")[0].trim().toLowerCase();
 }
 
 const HorizontalSection = ({
-  title,
-  subtitle,
-  icon,
-  companions,
-  reasons,
-  badge,
+  title, subtitle, icon, companions, reasons, badge,
 }: {
-  title: string;
-  subtitle?: string;
-  icon: React.ReactNode;
-  companions: Companion[];
-  reasons?: Record<string, string>;
-  badge?: string;
+  title: string; subtitle?: string; icon: React.ReactNode;
+  companions: Companion[]; reasons?: Record<string, string>; badge?: string;
 }) => {
   if (companions.length === 0) return null;
-
   return (
     <div className="mb-6">
       <div className="flex items-center gap-2 mb-3">
@@ -75,15 +64,35 @@ const DiscoverPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
+  const [priceMin, setPriceMin] = useState(0);
+  const [priceMax, setPriceMax] = useState(1000);
   const [selectedGender, setSelectedGender] = useState<string>("all");
+  const [locationFilter, setLocationFilter] = useState("");
+
+  // Unique locations for suggestions
+  const uniqueLocations = useMemo(() => {
+    const locs = new Set<string>();
+    companions.forEach((c) => {
+      if (c.location && c.location !== "Unknown") locs.add(c.location);
+    });
+    return Array.from(locs).sort();
+  }, [companions]);
+
+  const filteredLocations = useMemo(() => {
+    if (!locationFilter) return [];
+    return uniqueLocations
+      .filter((l) => l.toLowerCase().includes(locationFilter.toLowerCase()))
+      .slice(0, 5);
+  }, [uniqueLocations, locationFilter]);
 
   const filtered = companions.filter((c) => {
     if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !c.location.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+        !c.location.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        !c.services.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))) return false;
     if (selectedServices.length > 0 && !selectedServices.some((s) => c.services.includes(s))) return false;
-    if (c.hourlyRate < priceRange[0] || c.hourlyRate > priceRange[1]) return false;
+    if (c.hourlyRate < priceMin || c.hourlyRate > priceMax) return false;
     if (selectedGender !== "all" && c.gender !== selectedGender) return false;
+    if (locationFilter && !c.location.toLowerCase().includes(locationFilter.toLowerCase())) return false;
     return true;
   });
 
@@ -91,6 +100,22 @@ const DiscoverPage = () => {
     setSelectedServices((prev) =>
       prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
     );
+  };
+
+  const activeFilterCount =
+    selectedServices.length +
+    (selectedGender !== "all" ? 1 : 0) +
+    (priceMin > 0 ? 1 : 0) +
+    (priceMax < 1000 ? 1 : 0) +
+    (locationFilter ? 1 : 0);
+
+  const clearAllFilters = () => {
+    setSelectedServices([]);
+    setSelectedGender("all");
+    setPriceMin(0);
+    setPriceMax(1000);
+    setLocationFilter("");
+    setSearchQuery("");
   };
 
   // ── AI Recommendations ──
@@ -115,14 +140,11 @@ const DiscoverPage = () => {
 
   const nearYou = useMemo(() => {
     if (!userCity) return [];
-    return companions
-      .filter((c) => extractCity(c.location) === userCity)
-      .slice(0, 8);
+    return companions.filter((c) => extractCity(c.location) === userCity).slice(0, 8);
   }, [companions, userCity]);
 
   const trendingInCity = useMemo(() => {
     if (!userCity) return [];
-    // Trending = verified companions in user's city, sorted by rate (proxy for popularity)
     return companions
       .filter((c) => extractCity(c.location) === userCity && c.verified)
       .sort((a, b) => b.hourlyRate - a.hourlyRate)
@@ -135,7 +157,6 @@ const DiscoverPage = () => {
       .filter((c) => c.createdAt && c.createdAt >= sevenDaysAgo)
       .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
       .slice(0, 8);
-    // If no truly new profiles, show the most recently created ones
     if (recent.length === 0) {
       return [...companions]
         .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
@@ -144,7 +165,7 @@ const DiscoverPage = () => {
     return recent;
   }, [companions]);
 
-  const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceRange[1] < 500;
+  const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceMax < 1000 || priceMin > 0 || locationFilter;
   const hasLocationSections = !isSearching && (nearYou.length > 0 || newArrivals.length > 0);
   const cityDisplayName = profile?.location?.split(",")[0]?.trim();
 
@@ -166,19 +187,29 @@ const DiscoverPage = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search by name or city..."
+                placeholder="Search name, city, or service..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-secondary rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground
                            focus:outline-none focus:ring-1 focus:ring-gold/50"
               />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors
+              className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-colors
                 ${showFilters ? "gradient-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
             >
               <SlidersHorizontal className="w-4 h-4" />
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                  {activeFilterCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -194,10 +225,49 @@ const DiscoverPage = () => {
               className="overflow-hidden mb-4"
             >
               <div className="glass rounded-xl p-4 space-y-4">
+                {/* Location Filter */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Location</p>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Filter by city..."
+                      value={locationFilter}
+                      onChange={(e) => setLocationFilter(e.target.value)}
+                      className="w-full bg-secondary rounded-lg pl-9 pr-8 py-2 text-xs text-foreground placeholder:text-muted-foreground
+                                 focus:outline-none focus:ring-1 focus:ring-gold/50"
+                    />
+                    {locationFilter && (
+                      <button onClick={() => setLocationFilter("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                  {filteredLocations.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {filteredLocations.map((loc) => (
+                        <button
+                          key={loc}
+                          onClick={() => setLocationFilter(loc)}
+                          className={`px-2 py-1 rounded-lg text-[10px] transition-colors ${
+                            locationFilter === loc
+                              ? "gradient-gold text-primary-foreground"
+                              : "bg-secondary text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {loc}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Gender */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Gender</p>
                   <div className="flex gap-2">
-                    {["all", "female", "male"].map((g) => (
+                    {["all", "female", "male", "non-binary"].map((g) => (
                       <button
                         key={g}
                         onClick={() => setSelectedGender(g)}
@@ -209,6 +279,8 @@ const DiscoverPage = () => {
                     ))}
                   </div>
                 </div>
+
+                {/* Services */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Services</p>
                   <div className="flex flex-wrap gap-1.5">
@@ -224,30 +296,85 @@ const DiscoverPage = () => {
                     ))}
                   </div>
                 </div>
+
+                {/* Price Range */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">
-                    Price: ${priceRange[0]} — ${priceRange[1]}/hr
+                    Price Range: ${priceMin} — ${priceMax === 1000 ? "1000+" : `$${priceMax}`}/hr
                   </p>
-                  <input
-                    type="range"
-                    min={0} max={500} step={25}
-                    value={priceRange[1]}
-                    onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-                    className="w-full accent-gold"
-                  />
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-muted-foreground w-8">Min</span>
+                      <input
+                        type="range"
+                        min={0} max={500} step={25}
+                        value={priceMin}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setPriceMin(Math.min(val, priceMax));
+                        }}
+                        className="w-full accent-gold"
+                      />
+                      <span className="text-xs text-foreground w-10 text-right">${priceMin}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-muted-foreground w-8">Max</span>
+                      <input
+                        type="range"
+                        min={0} max={1000} step={25}
+                        value={priceMax}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setPriceMax(Math.max(val, priceMin));
+                        }}
+                        className="w-full accent-gold"
+                      />
+                      <span className="text-xs text-foreground w-10 text-right">${priceMax === 1000 ? "∞" : priceMax}</span>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Clear All */}
+                {activeFilterCount > 0 && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="w-full text-xs text-destructive hover:text-destructive/80 font-medium py-2 transition-colors"
+                  >
+                    Clear All Filters ({activeFilterCount})
+                  </button>
+                )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* Active Filter Chips */}
+        {activeFilterCount > 0 && !showFilters && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {locationFilter && (
+              <FilterChip label={`📍 ${locationFilter}`} onRemove={() => setLocationFilter("")} />
+            )}
+            {selectedGender !== "all" && (
+              <FilterChip label={selectedGender} onRemove={() => setSelectedGender("all")} />
+            )}
+            {selectedServices.map((s) => (
+              <FilterChip key={s} label={s} onRemove={() => toggleService(s)} />
+            ))}
+            {(priceMin > 0 || priceMax < 1000) && (
+              <FilterChip
+                label={`$${priceMin}–$${priceMax === 1000 ? "∞" : priceMax}`}
+                onRemove={() => { setPriceMin(0); setPriceMax(1000); }}
+              />
+            )}
+            <button onClick={clearAllFilters} className="text-[10px] text-destructive hover:underline px-1">
+              Clear all
+            </button>
+          </div>
+        )}
+
         {/* AI Recommendations - only show when not searching */}
         {!isSearching && hasRecommendations && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-2"
-          >
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-2">
             {recommendedCompanions.length > 0 && (
               <HorizontalSection
                 title="Recommended for You"
@@ -257,7 +384,6 @@ const DiscoverPage = () => {
                 reasons={recommendations?.reasons}
               />
             )}
-
             {becauseYouViewedSections.map((section) => (
               <HorizontalSection
                 key={section.viewedId}
@@ -293,11 +419,7 @@ const DiscoverPage = () => {
 
         {/* Location-aware sections */}
         {!isSearching && !isLoading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
             {nearYou.length > 0 && (
               <HorizontalSection
                 title={`Near You${cityDisplayName ? ` in ${cityDisplayName}` : ""}`}
@@ -307,7 +429,6 @@ const DiscoverPage = () => {
                 badge="Local"
               />
             )}
-
             {trendingInCity.length > 0 && (
               <HorizontalSection
                 title={`Trending in ${cityDisplayName || "Your City"}`}
@@ -317,7 +438,6 @@ const DiscoverPage = () => {
                 badge="Hot"
               />
             )}
-
             {newArrivals.length > 0 && (
               <HorizontalSection
                 title="New Arrivals"
@@ -327,8 +447,6 @@ const DiscoverPage = () => {
                 badge="New"
               />
             )}
-
-            {/* Divider before full grid */}
             {(hasRecommendations || hasLocationSections) && (
               <div className="flex items-center gap-3 my-4">
                 <div className="flex-1 h-px bg-border" />
@@ -360,8 +478,13 @@ const DiscoverPage = () => {
               ))}
             </div>
             {filtered.length === 0 && (
-              <div className="text-center py-16">
+              <div className="text-center py-16 space-y-3">
                 <p className="text-muted-foreground">No companions match your filters</p>
+                {activeFilterCount > 0 && (
+                  <button onClick={clearAllFilters} className="text-sm text-gold hover:underline">
+                    Clear all filters
+                  </button>
+                )}
               </div>
             )}
           </>
@@ -370,5 +493,14 @@ const DiscoverPage = () => {
     </div>
   );
 };
+
+const FilterChip = ({ label, onRemove }: { label: string; onRemove: () => void }) => (
+  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-medium capitalize">
+    {label}
+    <button onClick={onRemove} className="hover:text-destructive transition-colors">
+      <X className="w-3 h-3" />
+    </button>
+  </span>
+);
 
 export default DiscoverPage;
