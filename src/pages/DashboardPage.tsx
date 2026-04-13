@@ -1,10 +1,12 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { User, Calendar, MessageCircle, Heart, Settings, Shield, LogOut, ChevronRight, Crown, Star } from "lucide-react";
-import { bookings, companions } from "@/data/mock";
+import { User, Calendar, MessageCircle, Heart, Settings, Shield, LogOut, ChevronRight, Crown } from "lucide-react";
+import { bookings } from "@/data/mock";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const { profile, signOut, user } = useAuth();
 
   const stats = [
     { label: "Active Chats", value: "3", icon: MessageCircle },
@@ -20,6 +22,11 @@ const DashboardPage = () => {
     { label: "Settings", icon: Settings, path: "/settings" },
   ];
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/login");
+  };
+
   return (
     <div className="min-h-screen pb-20">
       <header className="glass-strong">
@@ -29,11 +36,15 @@ const DashboardPage = () => {
               <User className="w-7 h-7 text-foreground" />
             </div>
             <div>
-              <h1 className="font-display text-xl font-bold text-foreground">Guest User</h1>
-              <p className="text-xs text-muted-foreground">guest@velvetcircle.com</p>
+              <h1 className="font-display text-xl font-bold text-foreground">
+                {profile?.display_name || "User"}
+              </h1>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
               <div className="flex items-center gap-1 mt-1">
                 <Crown className="w-3 h-3 text-gold" />
-                <span className="text-[10px] text-gold font-medium uppercase tracking-wider">Premium Member</span>
+                <span className="text-[10px] text-gold font-medium uppercase tracking-wider">
+                  {profile?.role === "companion" ? "Companion" : "Guest"} Member
+                </span>
               </div>
             </div>
           </div>
@@ -41,7 +52,6 @@ const DashboardPage = () => {
       </header>
 
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-4">
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {stats.map((stat, i) => (
             <motion.div
@@ -58,7 +68,6 @@ const DashboardPage = () => {
           ))}
         </div>
 
-        {/* Recent bookings */}
         <div className="glass rounded-xl p-4">
           <h2 className="font-display font-semibold text-foreground text-sm mb-3">Recent Bookings</h2>
           <div className="space-y-3">
@@ -80,7 +89,6 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Menu */}
         <div className="glass rounded-xl overflow-hidden">
           {menuItems.map(({ label, icon: Icon, path }) => (
             <button
@@ -95,7 +103,10 @@ const DashboardPage = () => {
           ))}
         </div>
 
-        <button className="w-full flex items-center justify-center gap-2 py-3 text-destructive text-sm font-medium">
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center justify-center gap-2 py-3 text-destructive text-sm font-medium"
+        >
           <LogOut className="w-4 h-4" /> Log Out
         </button>
       </div>
