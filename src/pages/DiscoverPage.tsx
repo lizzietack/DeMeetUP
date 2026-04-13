@@ -529,12 +529,64 @@ const DiscoverPage = () => {
           </div>
         ) : (
           <>
-            <p className="text-xs text-muted-foreground mb-3">{filtered.length} companions found</p>
+            {/* Results header with count + sort */}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-muted-foreground">{filtered.length} companions found</p>
+              <div className="relative">
+                <button
+                  onClick={() => setShowSortMenu(!showSortMenu)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowUpDown className="w-3 h-3" />
+                  <span>{SORT_LABELS[sortBy]}</span>
+                  <ChevronDown className={`w-3 h-3 transition-transform ${showSortMenu ? "rotate-180" : ""}`} />
+                </button>
+                <AnimatePresence>
+                  {showSortMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="absolute right-0 top-full mt-1 z-40 w-44 glass rounded-xl border border-border overflow-hidden shadow-lg"
+                    >
+                      {(Object.keys(SORT_LABELS) as SortOption[]).map((option) => (
+                        <button
+                          key={option}
+                          onClick={() => { setSortBy(option); setShowSortMenu(false); }}
+                          className={`w-full text-left px-3 py-2 text-xs transition-colors
+                            ${sortBy === option ? "text-gold bg-gold/10 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}
+                        >
+                          {SORT_LABELS[option]}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
-              {filtered.map((c, i) => (
+              {visibleCompanions.map((c, i) => (
                 <CompanionCard key={c.id} companion={c} index={i} />
               ))}
             </div>
+
+            {/* Infinite scroll sentinel */}
+            {visibleCount < filtered.length && (
+              <div ref={sentinelRef} className="flex justify-center py-6">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="w-4 h-4 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+                  Loading more...
+                </div>
+              </div>
+            )}
+
+            {visibleCount >= filtered.length && filtered.length > PAGE_SIZE && (
+              <p className="text-center text-[10px] text-muted-foreground py-4">
+                You've seen all {filtered.length} companions
+              </p>
+            )}
+
             {filtered.length === 0 && (
               <div className="text-center py-16 space-y-3">
                 <p className="text-muted-foreground">No companions match your filters</p>
