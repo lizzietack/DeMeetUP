@@ -180,6 +180,14 @@ const CompanionProfilePage = () => {
                 <MapPin className="w-3.5 h-3.5" />
                 <span>{companion.location}</span>
               </div>
+              <div className="mt-2">
+                <VerificationBadges
+                  photoVerified={companion.photoVerified}
+                  selfieVerified={companion.selfieVerified}
+                  isFullyVerified={companion.photoVerified && companion.selfieVerified}
+                  compact
+                />
+              </div>
             </div>
             {companion.rating > 0 && (
               <div className="flex items-center gap-1">
