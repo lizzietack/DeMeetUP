@@ -52,14 +52,14 @@ export function useSubmitReport() {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { reported_user_id: string; reason: string; details?: string }) => {
+    mutationFn: async (input: { reported_user_id: string; reason: "harassment" | "spam" | "inappropriate" | "scam" | "other"; details?: string }) => {
       if (!user) throw new Error("Not authenticated");
-      const { error } = await supabase.from("reports").insert({
+      const { error } = await supabase.from("reports").insert([{
         reporter_id: user.id,
         reported_user_id: input.reported_user_id,
         reason: input.reason,
         details: input.details || null,
-      });
+      }]);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reports"] }),
