@@ -52,7 +52,11 @@ const OnboardingPage = () => {
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [country, setCountry] = useState("");
   const [location, setLocation] = useState(profile?.location || "");
+
+  const selectedCurrency = getCountryCurrency(country);
+  const currencySymbol = selectedCurrency?.currencySymbol || "$";
 
   // Step 2: Bio
   const [bio, setBio] = useState(profile?.bio || "");
