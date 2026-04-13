@@ -319,6 +319,27 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_companions: {
+        Row: {
+          companion_profile_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          companion_profile_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          companion_profile_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_interactions: {
         Row: {
           companion_profile_id: string
