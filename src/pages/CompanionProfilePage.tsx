@@ -170,11 +170,12 @@ const CompanionProfilePage = () => {
       <div className="fixed bottom-0 left-0 right-0 glass-strong border-t border-border/50 p-4 z-40">
         <div className="max-w-lg mx-auto flex gap-3">
           <button
-            onClick={() => navigate(`/chat/${companion.id}`)}
+            onClick={handleMessage}
+            disabled={startConversation.isPending}
             className="flex-1 bg-secondary text-foreground font-display font-semibold py-3 rounded-xl
-                       flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors"
+                       flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors disabled:opacity-50"
           >
-            <MessageCircle className="w-4 h-4" /> Message
+            <MessageCircle className="w-4 h-4" /> {startConversation.isPending ? "..." : "Message"}
           </button>
           <button
             onClick={() => navigate(`/book/${companion.id}`)}
