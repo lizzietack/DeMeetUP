@@ -531,13 +531,13 @@ const OnboardingPage = () => {
                     <span className="text-sm font-semibold text-foreground">Hourly Rate *</span>
                   </div>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">{currencySymbol}</span>
                     <input
                       type="number"
                       placeholder="150"
                       value={hourlyRate}
                       onChange={(e) => setHourlyRate(e.target.value)}
-                      className="w-full bg-secondary rounded-xl pl-9 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold/50"
+                      className="w-full bg-secondary rounded-xl pl-12 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold/50"
                     />
                   </div>
                 </div>
@@ -548,13 +548,13 @@ const OnboardingPage = () => {
                     <span className="text-sm font-semibold text-foreground">Overnight Rate (optional)</span>
                   </div>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">{currencySymbol}</span>
                     <input
                       type="number"
                       placeholder="500"
                       value={overnightRate}
                       onChange={(e) => setOvernightRate(e.target.value)}
-                      className="w-full bg-secondary rounded-xl pl-9 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold/50"
+                      className="w-full bg-secondary rounded-xl pl-12 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold/50"
                     />
                   </div>
                 </div>
@@ -588,7 +588,7 @@ const OnboardingPage = () => {
                         </button>
                       </div>
                       <div className="relative">
-                        <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">{currencySymbol}</span>
                         <input
                           type="number"
                           placeholder="Price"
@@ -709,8 +709,8 @@ const OnboardingPage = () => {
                     <div>
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Pricing</p>
                       <p className="text-sm text-foreground">
-                        ${hourlyRate}/hr
-                        {overnightRate && ` • $${overnightRate}/night`}
+                        {currencySymbol}{hourlyRate}/hr
+                        {overnightRate && ` • ${currencySymbol}${overnightRate}/night`}
                       </p>
                     </div>
                     <div>
