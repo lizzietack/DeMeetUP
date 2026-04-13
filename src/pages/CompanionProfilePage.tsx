@@ -14,8 +14,16 @@ const CompanionProfilePage = () => {
   const { data: companion, isLoading } = useCompanion(id);
   const { user } = useAuth();
   const startConversation = useStartConversation();
+  const { trackView, trackLike } = useTrackInteraction();
   const [activeImage, setActiveImage] = useState(0);
   const [liked, setLiked] = useState(false);
+
+  // Track profile view
+  useEffect(() => {
+    if (companion?.id) {
+      trackView(companion.id);
+    }
+  }, [companion?.id, trackView]);
 
   const handleMessage = async () => {
     if (!user) { navigate("/login"); return; }
