@@ -406,14 +406,39 @@ const OnboardingPage = () => {
                 )}
               </div>
 
+              {/* Country */}
+              <div>
+                <label className="text-sm text-muted-foreground mb-1.5 block">Country</label>
+                <div className="relative">
+                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="w-full bg-secondary rounded-xl pl-10 pr-4 py-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-gold/50 appearance-none"
+                  >
+                    <option value="">Select your country</option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.country}>
+                        {c.country}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {country && selectedCurrency && (
+                  <p className="text-xs text-gold mt-1">
+                    Currency: {selectedCurrency.currency} ({selectedCurrency.currencySymbol})
+                  </p>
+                )}
+              </div>
+
               {/* Location */}
               <div>
-                <label className="text-sm text-muted-foreground mb-1.5 block">Location</label>
+                <label className="text-sm text-muted-foreground mb-1.5 block">City / Region</label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                     type="text"
-                    placeholder="City, Country"
+                    placeholder="e.g. Accra, Lagos, Cape Town"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     maxLength={100}
