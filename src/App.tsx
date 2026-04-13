@@ -23,6 +23,8 @@ import ProfilePage from "./pages/ProfilePage.tsx";
 import SavedCompanionsPage from "./pages/SavedCompanionsPage.tsx";
 import SafetyPrivacyPage from "./pages/SafetyPrivacyPage.tsx";
 import SettingsPage from "./pages/SettingsPage.tsx";
+import OnboardingPage from "./pages/OnboardingPage.tsx";
+import AdminPage from "./pages/AdminPage.tsx";
 import BottomNav from "./components/BottomNav.tsx";
 
 const queryClient = new QueryClient();
@@ -34,12 +36,20 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const OnboardingGuard = ({ children }: { children: React.ReactNode }) => {
+  const { user, profile, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" /></div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (profile && !profile.profile_completed) return <Navigate to="/onboarding" replace />;
+  return <>{children}</>;
+};
+
 const AppContent = () => {
   const location = useLocation();
   const { user } = useAuth();
   const hideNav = location.pathname.startsWith("/chat/") ||
     location.pathname.startsWith("/book/") ||
-    ["/login", "/register", "/select-role", "/companion-setup", "/forgot-password", "/reset-password", "/profile", "/saved-companions", "/safety-privacy", "/settings"].includes(location.pathname);
+    ["/login", "/register", "/select-role", "/companion-setup", "/forgot-password", "/reset-password", "/profile", "/saved-companions", "/safety-privacy", "/settings", "/onboarding", "/admin"].includes(location.pathname);
 
   return (
     <>
@@ -51,19 +61,21 @@ const AppContent = () => {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
         <Route path="/select-role" element={<ProtectedRoute><SelectRolePage /></ProtectedRoute>} />
         <Route path="/companion-setup" element={<ProtectedRoute><CompanionSetupPage /></ProtectedRoute>} />
         <Route path="/discover" element={<DiscoverPage />} />
         <Route path="/featured" element={<FeaturedPage />} />
         <Route path="/companion/:id" element={<CompanionProfilePage />} />
-        <Route path="/chat" element={<ProtectedRoute><ChatListPage /></ProtectedRoute>} />
-        <Route path="/chat/:id" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
-        <Route path="/book/:id" element={<ProtectedRoute><BookingPage /></ProtectedRoute>} />
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-        <Route path="/saved-companions" element={<ProtectedRoute><SavedCompanionsPage /></ProtectedRoute>} />
-        <Route path="/safety-privacy" element={<ProtectedRoute><SafetyPrivacyPage /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+        <Route path="/chat" element={<OnboardingGuard><ChatListPage /></OnboardingGuard>} />
+        <Route path="/chat/:id" element={<OnboardingGuard><ChatPage /></OnboardingGuard>} />
+        <Route path="/book/:id" element={<OnboardingGuard><BookingPage /></OnboardingGuard>} />
+        <Route path="/dashboard" element={<OnboardingGuard><DashboardPage /></OnboardingGuard>} />
+        <Route path="/profile" element={<OnboardingGuard><ProfilePage /></OnboardingGuard>} />
+        <Route path="/saved-companions" element={<OnboardingGuard><SavedCompanionsPage /></OnboardingGuard>} />
+        <Route path="/safety-privacy" element={<OnboardingGuard><SafetyPrivacyPage /></OnboardingGuard>} />
+        <Route path="/settings" element={<OnboardingGuard><SettingsPage /></OnboardingGuard>} />
+        <Route path="/admin" element={<OnboardingGuard><AdminPage /></OnboardingGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!hideNav && <BottomNav />}
