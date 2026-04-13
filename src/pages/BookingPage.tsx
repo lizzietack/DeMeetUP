@@ -190,12 +190,12 @@ const BookingPage = () => {
           <img src={companion.images[0]} alt={companion.name} className="w-14 h-14 rounded-xl object-cover" />
           <div className="flex-1">
             <h3 className="font-display font-semibold text-foreground">{companion.name}</h3>
-            <p className="text-xs text-muted-foreground">{companion.location} · ${companion.hourlyRate}/hr</p>
+            <p className="text-xs text-muted-foreground">{companion.location} · {companion.currencySymbol || "$"}{companion.hourlyRate}/hr</p>
           </div>
           {companion.overnightRate > 0 && (
             <div className="text-right">
               <p className="text-[10px] text-muted-foreground">Overnight</p>
-              <p className="text-xs font-display font-semibold text-gold">${companion.overnightRate}</p>
+              <p className="text-xs font-display font-semibold text-gold">{companion.currencySymbol || "$"}{companion.overnightRate}</p>
             </div>
           )}
         </div>
@@ -384,9 +384,9 @@ const BookingPage = () => {
                   <span className="text-muted-foreground">
                     {isOvernight
                       ? "Overnight rate"
-                      : `Service (${duration} hr${duration > 1 ? "s" : ""} × $${companion.hourlyRate})`}
+                      : `Service (${duration} hr${duration > 1 ? "s" : ""} × ${companion.currencySymbol || "$"}${companion.hourlyRate})`}
                   </span>
-                  <span className="text-foreground">${serviceFee}</span>
+                  <span className="text-foreground">{companion.currencySymbol || "$"}{serviceFee}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Platform fee (10%)</span>
