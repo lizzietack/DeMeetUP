@@ -9,8 +9,9 @@ import ImageStatusBadge from "@/components/ImageStatusBadge";
 import {
   ArrowRight, ArrowLeft, Camera, X, Plus, Check,
   DollarSign, Clock, Moon, Package, User, MapPin,
-  Calendar, FileText, Image, Eye, Loader2
+  Calendar, FileText, Image, Eye, Loader2, Globe
 } from "lucide-react";
+import { COUNTRIES, getCountryCurrency } from "@/data/countries";
 
 const SERVICE_OPTIONS = [
   "Dinner Date", "Travel Companion", "Party Partner", "Social Events",
