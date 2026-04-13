@@ -11,9 +11,16 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { signIn, user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Redirect if already authenticated
+  if (!loading && user) {
+    navigate("/discover", { replace: true });
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,12 +49,24 @@ const LoginPage = () => {
 
         <button
           type="button"
+          disabled={googleLoading}
           onClick={async () => {
-            const result = await lovable.auth.signInWithOAuth("google", {
-              redirect_uri: window.location.origin,
-            });
-            if (result.error) {
-              toast({ title: "Google sign-in failed", description: String(result.error), variant: "destructive" });
+            setGoogleLoading(true);
+            try {
+              const result = await lovable.auth.signInWithOAuth("google", {
+                redirect_uri: window.location.origin,
+              });
+              if (result.error) {
+                toast({ title: "Google sign-in failed", description: String(result.error), variant: "destructive" });
+                setGoogleLoading(false);
+              } else if (!result.redirected) {
+                // Session was set inline (no redirect needed)
+                navigate("/discover", { replace: true });
+              }
+              // If redirected, browser navigates away — no action needed
+            } catch (err: any) {
+              toast({ title: "Google sign-in failed", description: err?.message || "Something went wrong", variant: "destructive" });
+              setGoogleLoading(false);
             }
           }}
           className="w-full flex items-center justify-center gap-3 bg-secondary hover:bg-secondary/80 text-foreground font-medium py-3 rounded-xl transition-all"
