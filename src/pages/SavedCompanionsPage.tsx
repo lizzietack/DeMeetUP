@@ -123,7 +123,7 @@ const SavedCompanionsPage = () => {
                     </div>
                   )}
                   {companion.hourlyRate > 0 && (
-                    <p className="text-xs font-semibold text-primary">${companion.hourlyRate}/hr</p>
+                    <p className="text-xs font-semibold text-primary">{companion.currencySymbol || "$"}{companion.hourlyRate}/hr</p>
                   )}
                 </div>
               </motion.div>

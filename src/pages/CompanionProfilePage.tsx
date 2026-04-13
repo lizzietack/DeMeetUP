@@ -230,13 +230,13 @@ const CompanionProfilePage = () => {
               {companion.hourlyRate > 0 && (
                 <div className="bg-secondary rounded-xl p-3 text-center">
                   <p className="text-xs text-muted-foreground mb-1">Hourly</p>
-                  <p className="font-display text-xl font-bold text-gold">${companion.hourlyRate}</p>
+                  <p className="font-display text-xl font-bold text-gold">{companion.currencySymbol || "$"}{companion.hourlyRate}</p>
                 </div>
               )}
               {companion.overnightRate > 0 && (
                 <div className="bg-secondary rounded-xl p-3 text-center">
                   <p className="text-xs text-muted-foreground mb-1">Overnight</p>
-                  <p className="font-display text-xl font-bold text-gold">${companion.overnightRate}</p>
+                  <p className="font-display text-xl font-bold text-gold">{companion.currencySymbol || "$"}{companion.overnightRate}</p>
                 </div>
               )}
             </div>

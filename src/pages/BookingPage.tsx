@@ -137,7 +137,7 @@ const BookingPage = () => {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Total</span>
-              <span className="text-gold font-display font-bold">${total}</span>
+              <span className="text-gold font-display font-bold">{companion.currencySymbol || "$"}{total}</span>
             </div>
           </div>
 
@@ -190,12 +190,12 @@ const BookingPage = () => {
           <img src={companion.images[0]} alt={companion.name} className="w-14 h-14 rounded-xl object-cover" />
           <div className="flex-1">
             <h3 className="font-display font-semibold text-foreground">{companion.name}</h3>
-            <p className="text-xs text-muted-foreground">{companion.location} · ${companion.hourlyRate}/hr</p>
+            <p className="text-xs text-muted-foreground">{companion.location} · {companion.currencySymbol || "$"}{companion.hourlyRate}/hr</p>
           </div>
           {companion.overnightRate > 0 && (
             <div className="text-right">
               <p className="text-[10px] text-muted-foreground">Overnight</p>
-              <p className="text-xs font-display font-semibold text-gold">${companion.overnightRate}</p>
+              <p className="text-xs font-display font-semibold text-gold">{companion.currencySymbol || "$"}{companion.overnightRate}</p>
             </div>
           )}
         </div>
@@ -384,17 +384,17 @@ const BookingPage = () => {
                   <span className="text-muted-foreground">
                     {isOvernight
                       ? "Overnight rate"
-                      : `Service (${duration} hr${duration > 1 ? "s" : ""} × $${companion.hourlyRate})`}
+                      : `Service (${duration} hr${duration > 1 ? "s" : ""} × ${companion.currencySymbol || "$"}${companion.hourlyRate})`}
                   </span>
-                  <span className="text-foreground">${serviceFee}</span>
+                  <span className="text-foreground">{companion.currencySymbol || "$"}{serviceFee}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Platform fee (10%)</span>
-                  <span className="text-foreground">${platformFee}</span>
+                  <span className="text-foreground">{companion.currencySymbol || "$"}{platformFee}</span>
                 </div>
                 <div className="border-t border-border pt-2 flex justify-between">
                   <span className="font-display font-semibold text-foreground">Total</span>
-                  <span className="font-display font-bold text-gold text-xl">${total}</span>
+                  <span className="font-display font-bold text-gold text-xl">{companion.currencySymbol || "$"}{total}</span>
                 </div>
               </div>
 
@@ -437,7 +437,7 @@ const BookingPage = () => {
               className="flex-1 gradient-gold text-primary-foreground font-display font-semibold py-3.5 rounded-xl
                          hover:opacity-90 transition-all glow-gold disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {createBooking.isPending ? "Submitting..." : `Confirm Booking — $${total}`}
+              {createBooking.isPending ? "Submitting..." : `Confirm Booking — ${companion.currencySymbol || "$"}${total}`}
             </button>
           )}
         </div>

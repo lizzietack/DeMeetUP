@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Companion } from "@/data/mock";
+import { getCountryCurrency } from "@/data/countries";
 
 interface DbCompanionProfile {
   id: string;
@@ -18,6 +19,8 @@ interface DbCompanionProfile {
     avatar_url: string | null;
     bio: string | null;
     location: string | null;
+    country: string | null;
+    currency: string | null;
     photo_verified: boolean;
     selfie_verified: boolean;
     trust_score: number;
@@ -35,6 +38,10 @@ function mapToCompanion(row: DbCompanionProfile): CompanionWithVerification {
     .sort((a, b) => a.position - b.position)
     .map((img) => img.image_url);
 
+  const countryCurrency = row.profiles?.country
+    ? getCountryCurrency(row.profiles.country)
+    : undefined;
+
   return {
     id: row.id,
     userId: row.user_id,
@@ -42,6 +49,9 @@ function mapToCompanion(row: DbCompanionProfile): CompanionWithVerification {
     name: row.profiles?.display_name || "Anonymous",
     age: 0,
     location: row.profiles?.location || "Unknown",
+    country: row.profiles?.country || undefined,
+    currency: row.profiles?.currency || countryCurrency?.currency || undefined,
+    currencySymbol: countryCurrency?.currencySymbol || "$",
     bio: row.profiles?.bio || "",
     images: images.length > 0 ? images : ["/placeholder.svg"],
     services: row.services || [],
@@ -62,7 +72,7 @@ function mapToCompanion(row: DbCompanionProfile): CompanionWithVerification {
 const PROFILE_SELECT = `
   *,
   companion_images (image_url, position),
-  profiles!companion_profiles_user_id_fkey (display_name, avatar_url, bio, location, photo_verified, selfie_verified, trust_score)
+  profiles!companion_profiles_user_id_fkey (display_name, avatar_url, bio, location, country, currency, photo_verified, selfie_verified, trust_score)
 `;
 
 export function useCompanions() {
