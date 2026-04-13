@@ -1,14 +1,18 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Edit, BadgeCheck, User, Calendar } from "lucide-react";
+import { ArrowLeft, MapPin, Edit, User, Calendar, Image, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImageModeration } from "@/hooks/use-image-moderation";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import VerificationBadges from "@/components/VerificationBadges";
+import ImageStatusBadge from "@/components/ImageStatusBadge";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { profile, user, loading } = useAuth();
+  const { data: moderatedImages } = useImageModeration();
 
   if (loading) {
     return (
@@ -35,6 +39,7 @@ const ProfilePage = () => {
 
   const displayName = profile?.display_name || "User";
   const initials = displayName.slice(0, 2).toUpperCase();
+  const isFullyVerified = profile?.photo_verified && profile?.selfie_verified;
 
   return (
     <div className="min-h-screen pb-20">
@@ -63,12 +68,14 @@ const ProfilePage = () => {
             </AvatarFallback>
           </Avatar>
           <div className="text-center">
-            <div className="flex items-center justify-center gap-2">
-              <h2 className="font-display text-xl font-bold text-foreground">{displayName}</h2>
-              {profile?.role === "companion" && <BadgeCheck className="w-5 h-5 text-primary" />}
-            </div>
+            <h2 className="font-display text-xl font-bold text-foreground">{displayName}</h2>
             <p className="text-sm text-muted-foreground">{user?.email}</p>
           </div>
+          <VerificationBadges
+            photoVerified={profile?.photo_verified}
+            selfieVerified={profile?.selfie_verified}
+            isFullyVerified={isFullyVerified}
+          />
         </div>
 
         {/* Info Cards */}
@@ -86,25 +93,57 @@ const ProfilePage = () => {
           </p>
         </div>
 
-        {/* Verification */}
-        <div className="glass rounded-xl p-4 flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${profile?.role === "companion" ? "bg-primary/10" : "bg-secondary"}`}>
-            <BadgeCheck className={`w-5 h-5 ${profile?.role === "companion" ? "text-primary" : "text-muted-foreground"}`} />
+        {/* My Images */}
+        {moderatedImages && moderatedImages.length > 0 && (
+          <div className="glass rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Image className="w-4 h-4 text-gold" />
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">My Images</h3>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {moderatedImages.map((img) => (
+                <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden">
+                  <img src={img.image_url} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute bottom-0.5 left-0.5">
+                    <ImageStatusBadge status={img.status as string} rejectionReason={img.rejection_reason} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-foreground">Verification Status</p>
-            <p className="text-xs text-muted-foreground">
-              {profile?.role === "companion" ? "Verified companion" : "Standard account"}
-            </p>
-          </div>
-        </div>
+        )}
 
-        <Button
-          onClick={() => navigate("/dashboard")}
-          className="w-full gradient-gold text-primary-foreground font-semibold rounded-xl h-12"
-        >
-          <Edit className="w-4 h-4 mr-2" /> Edit Profile
-        </Button>
+        {/* Trust Score */}
+        {profile?.trust_score !== undefined && (
+          <div className="glass rounded-xl p-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Trust Score</h3>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full gradient-gold rounded-full transition-all"
+                  style={{ width: `${Math.min(profile.trust_score, 100)}%` }}
+                />
+              </div>
+              <span className="text-sm font-semibold text-gold">{profile.trust_score}</span>
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <Button
+            onClick={() => navigate("/onboarding")}
+            className="flex-1 gradient-gold text-primary-foreground font-semibold rounded-xl h-12"
+          >
+            <Edit className="w-4 h-4 mr-2" /> Edit Profile
+          </Button>
+          <Button
+            onClick={() => navigate("/settings")}
+            variant="outline"
+            className="rounded-xl h-12"
+          >
+            <Settings className="w-4 h-4" />
+          </Button>
+        </div>
       </motion.div>
     </div>
   );
