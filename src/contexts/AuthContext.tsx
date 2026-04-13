@@ -19,6 +19,8 @@ interface Profile {
   flagged_for_review: boolean;
   selfie_verified: boolean;
   photo_verified: boolean;
+  country: string | null;
+  currency: string | null;
 }
 
 interface AuthContextType {
