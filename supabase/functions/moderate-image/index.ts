@@ -205,6 +205,25 @@ Return ONLY valid JSON, no markdown.`,
         .eq("user_id", user.id);
     }
 
+    // Apply watermark to approved images
+    if (status === "approved") {
+      try {
+        await fetch(`${SUPABASE_URL}/functions/v1/watermark-image`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Internal-Call": "true",
+          },
+          body: JSON.stringify({
+            image_url,
+            moderation_id,
+          }),
+        });
+      } catch (wmErr) {
+        console.error("Watermark failed (non-blocking):", wmErr);
+      }
+    }
+
     // Flag user if suspicious
     if (analysis.is_stock_photo || analysis.is_screenshot) {
       await supabase
