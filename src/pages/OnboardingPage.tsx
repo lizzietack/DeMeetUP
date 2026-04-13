@@ -38,6 +38,7 @@ const OnboardingPage = () => {
 
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Step 1: Basic Info
   const [profileImage, setProfileImage] = useState<{
@@ -49,22 +50,20 @@ const OnboardingPage = () => {
     rejectionReason?: string | null;
   } | null>(null);
   const [profileImageUploading, setProfileImageUploading] = useState(false);
-  const [displayName, setDisplayName] = useState(profile?.display_name || "");
+  const [displayName, setDisplayName] = useState("");
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [country, setCountry] = useState("");
-  const [location, setLocation] = useState(profile?.location || "");
+  const [location, setLocation] = useState("");
 
   const selectedCurrency = getCountryCurrency(country);
   const currencySymbol = selectedCurrency?.currencySymbol || "$";
 
   // Step 2: Bio
-  const [bio, setBio] = useState(profile?.bio || "");
+  const [bio, setBio] = useState("");
 
   // Step 3: Role Setup
-  const [role, setRole] = useState<"guest" | "companion">(
-    (profile?.role as "guest" | "companion") || "guest"
-  );
+  const [role, setRole] = useState<"guest" | "companion">("guest");
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [hourlyRate, setHourlyRate] = useState("");
   const [overnightRate, setOvernightRate] = useState("");
@@ -73,6 +72,70 @@ const OnboardingPage = () => {
   // Step 4: Gallery
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [galleryUploading, setGalleryUploading] = useState(false);
+
+  // Pre-populate from existing profile data
+  useEffect(() => {
+    if (!profile || dataLoaded) return;
+
+    setDisplayName(profile.display_name || "");
+    setBio(profile.bio || "");
+    setLocation(profile.location || "");
+    setCountry(profile.country || "");
+    setRole((profile.role as "guest" | "companion") || "guest");
+    setDateOfBirth(profile.date_of_birth || "");
+
+    if (profile.avatar_url) {
+      setProfileImage({
+        url: profile.avatar_url,
+        preview: profile.avatar_url,
+        moderationStatus: "approved",
+      });
+    }
+
+    // Load companion profile data if exists
+    if (user && profile.role === "companion") {
+      supabase
+        .from("companion_profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle()
+        .then(({ data: cp }) => {
+          if (cp) {
+            setGender(cp.gender || "");
+            setHourlyRate(cp.hourly_rate ? String(cp.hourly_rate) : "");
+            setOvernightRate(cp.overnight_rate ? String(cp.overnight_rate) : "");
+            setSelectedServices((cp.services as string[]) || []);
+            const pkgs = cp.custom_packages as any[];
+            if (Array.isArray(pkgs)) {
+              setCustomPackages(pkgs.map((p: any) => ({
+                name: p.name || "",
+                price: p.price ? String(p.price) : "",
+                description: p.description || "",
+              })));
+            }
+
+            // Load gallery images
+            supabase
+              .from("companion_images")
+              .select("*")
+              .eq("companion_profile_id", cp.id)
+              .order("position")
+              .then(({ data: imgs }) => {
+                if (imgs && imgs.length > 0) {
+                  setGalleryImages(imgs.map((img) => ({
+                    imageUrl: img.image_url,
+                    moderationId: img.id,
+                    status: "approved",
+                    preview: img.image_url,
+                  })));
+                }
+              });
+          }
+        });
+    }
+
+    setDataLoaded(true);
+  }, [profile, user, dataLoaded]);
 
   const isCompanion = role === "companion";
 
