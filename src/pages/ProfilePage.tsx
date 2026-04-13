@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Edit, BadgeCheck, User, Calendar, Venus, Mars } from "lucide-react";
+import { ArrowLeft, MapPin, Edit, BadgeCheck, User, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
