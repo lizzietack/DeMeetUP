@@ -142,9 +142,30 @@ const ChatPage = () => {
           <button onClick={() => setShowTipModal(true)} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors" title="Send Tip">
             <DollarSign className="w-5 h-5 text-gold" />
           </button>
-          <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors">
-            <MoreVertical className="w-5 h-5 text-muted-foreground" />
-          </button>
+          <div className="relative">
+            <button onClick={() => setShowChatMenu(!showChatMenu)} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors">
+              <MoreVertical className="w-5 h-5 text-muted-foreground" />
+            </button>
+            <AnimatePresence>
+              {showChatMenu && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="absolute right-0 top-11 glass-strong rounded-xl overflow-hidden min-w-[160px] z-50"
+                >
+                  <button
+                    onClick={handleBlockFromChat}
+                    disabled={blockUser.isPending || isOtherBlocked}
+                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                  >
+                    <ShieldBan className="w-4 h-4" />
+                    {isOtherBlocked ? "Already Blocked" : "Block User"}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </header>
 
