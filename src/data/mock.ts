@@ -5,6 +5,9 @@ export interface Companion {
   createdAt?: string;
   age: number;
   location: string;
+  country?: string;
+  currency?: string;
+  currencySymbol?: string;
   bio: string;
   images: string[];
   services: string[];
