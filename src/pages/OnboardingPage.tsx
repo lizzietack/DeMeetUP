@@ -684,7 +684,7 @@ const OnboardingPage = () => {
                   )}
                   <div>
                     <h3 className="font-display text-lg font-bold text-foreground">{displayName}</h3>
-                    <p className="text-xs text-muted-foreground">{location} • {gender}</p>
+                    <p className="text-xs text-muted-foreground">{location}{country ? `, ${country}` : ""} • {gender}</p>
                     <p className="text-xs text-gold capitalize">{role}</p>
                   </div>
                 </div>
