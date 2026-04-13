@@ -200,6 +200,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_interactions: {
+        Row: {
+          companion_profile_id: string
+          created_at: string
+          id: string
+          interaction_type: string
+          user_id: string
+        }
+        Insert: {
+          companion_profile_id: string
+          created_at?: string
+          id?: string
+          interaction_type?: string
+          user_id: string
+        }
+        Update: {
+          companion_profile_id?: string
+          created_at?: string
+          id?: string
+          interaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_interactions_companion_profile_id_fkey"
+            columns: ["companion_profile_id"]
+            isOneToOne: false
+            referencedRelation: "companion_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_presence: {
         Row: {
           id: string
