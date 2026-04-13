@@ -9,8 +9,9 @@ import ImageStatusBadge from "@/components/ImageStatusBadge";
 import {
   ArrowRight, ArrowLeft, Camera, X, Plus, Check,
   DollarSign, Clock, Moon, Package, User, MapPin,
-  Calendar, FileText, Image, Eye, Loader2
+  Calendar, FileText, Image, Eye, Loader2, Globe
 } from "lucide-react";
+import { COUNTRIES, getCountryCurrency } from "@/data/countries";
 
 const SERVICE_OPTIONS = [
   "Dinner Date", "Travel Companion", "Party Partner", "Social Events",
@@ -51,7 +52,11 @@ const OnboardingPage = () => {
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [country, setCountry] = useState("");
   const [location, setLocation] = useState(profile?.location || "");
+
+  const selectedCurrency = getCountryCurrency(country);
+  const currencySymbol = selectedCurrency?.currencySymbol || "$";
 
   // Step 2: Bio
   const [bio, setBio] = useState(profile?.bio || "");
@@ -178,6 +183,7 @@ const OnboardingPage = () => {
           displayName.trim().length >= 2 &&
           gender !== "" &&
           age >= 18 &&
+          country !== "" &&
           location.trim().length >= 2
         );
       }
@@ -208,6 +214,8 @@ const OnboardingPage = () => {
         display_name: displayName.trim(),
         bio: bio.trim(),
         location: location.trim(),
+        country: country || null,
+        currency: selectedCurrency?.currency || null,
         role,
         date_of_birth: dateOfBirth || null,
         avatar_url: profileImage?.url || null,
@@ -401,14 +409,39 @@ const OnboardingPage = () => {
                 )}
               </div>
 
+              {/* Country */}
+              <div>
+                <label className="text-sm text-muted-foreground mb-1.5 block">Country</label>
+                <div className="relative">
+                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="w-full bg-secondary rounded-xl pl-10 pr-4 py-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-gold/50 appearance-none"
+                  >
+                    <option value="">Select your country</option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.country}>
+                        {c.country}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {country && selectedCurrency && (
+                  <p className="text-xs text-gold mt-1">
+                    Currency: {selectedCurrency.currency} ({selectedCurrency.currencySymbol})
+                  </p>
+                )}
+              </div>
+
               {/* Location */}
               <div>
-                <label className="text-sm text-muted-foreground mb-1.5 block">Location</label>
+                <label className="text-sm text-muted-foreground mb-1.5 block">City / Region</label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                     type="text"
-                    placeholder="City, Country"
+                    placeholder="e.g. Accra, Lagos, Cape Town"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     maxLength={100}
@@ -500,13 +533,13 @@ const OnboardingPage = () => {
                     <span className="text-sm font-semibold text-foreground">Hourly Rate *</span>
                   </div>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">{currencySymbol}</span>
                     <input
                       type="number"
                       placeholder="150"
                       value={hourlyRate}
                       onChange={(e) => setHourlyRate(e.target.value)}
-                      className="w-full bg-secondary rounded-xl pl-9 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold/50"
+                      className="w-full bg-secondary rounded-xl pl-12 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold/50"
                     />
                   </div>
                 </div>
@@ -517,13 +550,13 @@ const OnboardingPage = () => {
                     <span className="text-sm font-semibold text-foreground">Overnight Rate (optional)</span>
                   </div>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">{currencySymbol}</span>
                     <input
                       type="number"
                       placeholder="500"
                       value={overnightRate}
                       onChange={(e) => setOvernightRate(e.target.value)}
-                      className="w-full bg-secondary rounded-xl pl-9 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold/50"
+                      className="w-full bg-secondary rounded-xl pl-12 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold/50"
                     />
                   </div>
                 </div>
@@ -557,7 +590,7 @@ const OnboardingPage = () => {
                         </button>
                       </div>
                       <div className="relative">
-                        <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">{currencySymbol}</span>
                         <input
                           type="number"
                           placeholder="Price"
@@ -653,7 +686,7 @@ const OnboardingPage = () => {
                   )}
                   <div>
                     <h3 className="font-display text-lg font-bold text-foreground">{displayName}</h3>
-                    <p className="text-xs text-muted-foreground">{location} • {gender}</p>
+                    <p className="text-xs text-muted-foreground">{location}{country ? `, ${country}` : ""} • {gender}</p>
                     <p className="text-xs text-gold capitalize">{role}</p>
                   </div>
                 </div>
@@ -678,8 +711,8 @@ const OnboardingPage = () => {
                     <div>
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Pricing</p>
                       <p className="text-sm text-foreground">
-                        ${hourlyRate}/hr
-                        {overnightRate && ` • $${overnightRate}/night`}
+                        {currencySymbol}{hourlyRate}/hr
+                        {overnightRate && ` • ${currencySymbol}${overnightRate}/night`}
                       </p>
                     </div>
                     <div>
