@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, SlidersHorizontal, Sparkles, Eye } from "lucide-react";
 import CompanionCard from "@/components/CompanionCard";
 import { useCompanions } from "@/hooks/use-companions";
+import { useRecommendations } from "@/hooks/use-recommendations";
+import { useAuth } from "@/contexts/AuthContext";
+import type { Companion } from "@/data/mock";
 
 const SERVICE_OPTIONS = [
   "Dinner Date", "Travel Companion", "Party Partner", "Social Events",
@@ -10,8 +13,50 @@ const SERVICE_OPTIONS = [
   "Wine Tasting", "Weekend Getaway", "Business Event", "Photography",
 ];
 
+const RecommendedSection = ({
+  title,
+  subtitle,
+  icon,
+  companions,
+  reasons,
+}: {
+  title: string;
+  subtitle?: string;
+  icon: React.ReactNode;
+  companions: Companion[];
+  reasons?: Record<string, string>;
+}) => {
+  if (companions.length === 0) return null;
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-center gap-2 mb-3">
+        {icon}
+        <div>
+          <h2 className="font-display font-semibold text-foreground text-sm">{title}</h2>
+          {subtitle && <p className="text-[10px] text-muted-foreground">{subtitle}</p>}
+        </div>
+      </div>
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+        {companions.map((c, i) => (
+          <div key={c.id} className="flex-shrink-0 w-[160px]">
+            <CompanionCard companion={c} index={i} />
+            {reasons?.[c.id] && (
+              <p className="text-[10px] text-muted-foreground mt-1 px-1 line-clamp-2 italic">
+                {reasons[c.id]}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const DiscoverPage = () => {
   const { data: companions = [], isLoading } = useCompanions();
+  const { user } = useAuth();
+  const { data: recommendations, isLoading: recsLoading } = useRecommendations();
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
@@ -32,6 +77,25 @@ const DiscoverPage = () => {
       prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
     );
   };
+
+  // Build recommended companions list
+  const recommendedCompanions = (recommendations?.recommended || [])
+    .map((id) => companions.find((c) => c.id === id))
+    .filter(Boolean) as Companion[];
+
+  // Build "because you viewed" sections
+  const becauseYouViewedSections = (recommendations?.becauseYouViewed || [])
+    .map((byv) => ({
+      ...byv,
+      suggested: byv.suggestedIds
+        .map((id) => companions.find((c) => c.id === id))
+        .filter(Boolean) as Companion[],
+    }))
+    .filter((s) => s.suggested.length > 0)
+    .slice(0, 2);
+
+  const hasRecommendations = user && (recommendedCompanions.length > 0 || becauseYouViewedSections.length > 0);
+  const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceRange[1] < 500;
 
   return (
     <div className="min-h-screen pb-20">
@@ -117,6 +181,63 @@ const DiscoverPage = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* AI Recommendations - only show when not searching */}
+        {!isSearching && hasRecommendations && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-2"
+          >
+            {recommendedCompanions.length > 0 && (
+              <RecommendedSection
+                title="Recommended for You"
+                subtitle="Curated by AI based on your preferences"
+                icon={<Sparkles className="w-4 h-4 text-gold" />}
+                companions={recommendedCompanions}
+                reasons={recommendations?.reasons}
+              />
+            )}
+
+            {becauseYouViewedSections.map((section) => (
+              <RecommendedSection
+                key={section.viewedId}
+                title={`Because you viewed ${section.viewedName}`}
+                icon={<Eye className="w-4 h-4 text-accent" />}
+                companions={section.suggested}
+                reasons={recommendations?.reasons}
+              />
+            ))}
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 my-4">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">All Companions</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+          </motion.div>
+        )}
+
+        {/* Loading skeleton for recommendations */}
+        {!isSearching && user && recsLoading && !isLoading && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-4 h-4 bg-secondary rounded shimmer" />
+              <div className="h-4 w-36 bg-secondary rounded shimmer" />
+            </div>
+            <div className="flex gap-3 overflow-hidden">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex-shrink-0 w-[160px] glass rounded-2xl overflow-hidden">
+                  <div className="aspect-[3/4] bg-secondary shimmer" />
+                  <div className="p-2 space-y-1">
+                    <div className="h-3 bg-secondary rounded shimmer w-2/3" />
+                    <div className="h-2 bg-secondary rounded shimmer w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="grid grid-cols-2 gap-3">
