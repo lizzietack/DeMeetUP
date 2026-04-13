@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, BadgeCheck, Star, MapPin, Heart, Share2, MessageCircle, Calendar, DollarSign, ShieldBan, MoreVertical } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Star, MapPin, Heart, Share2, MessageCircle, Calendar, DollarSign, ShieldBan, MoreVertical, Flag } from "lucide-react";
 import { useCompanion } from "@/hooks/use-companions";
 import { useStartConversation } from "@/hooks/use-chat";
 import { useTrackInteraction } from "@/hooks/use-recommendations";
@@ -9,6 +9,7 @@ import { useSavedCompanionIds, useToggleSaveCompanion } from "@/hooks/use-saved-
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import ReportUserModal from "@/components/ReportUserModal";
 
 const CompanionProfilePage = () => {
   const { id } = useParams();
@@ -23,6 +24,7 @@ const CompanionProfilePage = () => {
   const toggleSave = useToggleSaveCompanion();
   const isSaved = id ? savedIds.has(id) : false;
   const [showMenu, setShowMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const blockUser = useBlockUser();
   const { data: blockedUsers = [] } = useBlockedUsers();
 
@@ -131,6 +133,13 @@ const CompanionProfilePage = () => {
                     >
                       <ShieldBan className="w-4 h-4" />
                       {isBlocked ? "Already Blocked" : "Block User"}
+                    </button>
+                    <button
+                      onClick={() => { setShowReportModal(true); setShowMenu(false); }}
+                      className="w-full flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary/50 transition-colors border-t border-border/30"
+                    >
+                      <Flag className="w-4 h-4" />
+                      Report User
                     </button>
                   </motion.div>
                 )}
