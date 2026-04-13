@@ -1,15 +1,30 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, BadgeCheck, Star, MapPin, Heart, Share2, MessageCircle, Calendar, DollarSign } from "lucide-react";
-import { companions } from "@/data/mock";
+import { useCompanion } from "@/hooks/use-companions";
 import { useState } from "react";
 
 const CompanionProfilePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const companion = companions.find((c) => c.id === id);
+  const { data: companion, isLoading } = useCompanion(id);
   const [activeImage, setActiveImage] = useState(0);
   const [liked, setLiked] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen">
+        <div className="h-[65vh] bg-secondary shimmer" />
+        <div className="max-w-lg mx-auto px-4 -mt-16 relative z-10 space-y-4">
+          <div className="glass-strong rounded-2xl p-5 space-y-4">
+            <div className="h-8 bg-secondary rounded shimmer w-1/2" />
+            <div className="h-4 bg-secondary rounded shimmer w-3/4" />
+            <div className="h-20 bg-secondary rounded shimmer" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!companion) {
     return (
@@ -72,62 +87,67 @@ const CompanionProfilePage = () => {
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-display text-2xl font-bold text-foreground">{companion.name}, {companion.age}</h1>
+                <h1 className="font-display text-2xl font-bold text-foreground">{companion.name}</h1>
                 {companion.verified && <BadgeCheck className="w-5 h-5 text-gold" />}
               </div>
               <div className="flex items-center gap-1 text-muted-foreground text-sm mt-1">
                 <MapPin className="w-3.5 h-3.5" />
                 <span>{companion.location}</span>
-                {companion.online && (
-                  <>
-                    <span className="mx-1">·</span>
-                    <div className="w-2 h-2 rounded-full bg-green-400" />
-                    <span className="text-green-400 text-xs">Online</span>
-                  </>
-                )}
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 text-gold fill-gold" />
-              <span className="font-display font-semibold text-foreground">{companion.rating}</span>
-              <span className="text-xs text-muted-foreground">({companion.reviewCount})</span>
-            </div>
+            {companion.rating > 0 && (
+              <div className="flex items-center gap-1">
+                <Star className="w-4 h-4 text-gold fill-gold" />
+                <span className="font-display font-semibold text-foreground">{companion.rating}</span>
+                <span className="text-xs text-muted-foreground">({companion.reviewCount})</span>
+              </div>
+            )}
           </div>
 
-          <p className="text-muted-foreground text-sm leading-relaxed">{companion.bio}</p>
+          {companion.bio && (
+            <p className="text-muted-foreground text-sm leading-relaxed">{companion.bio}</p>
+          )}
 
           {/* Services */}
-          <div className="flex flex-wrap gap-1.5">
-            {companion.services.map((s) => (
-              <span key={s} className="text-xs px-3 py-1.5 rounded-full bg-secondary text-muted-foreground border border-border">
-                {s}
-              </span>
-            ))}
-          </div>
+          {companion.services.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {companion.services.map((s) => (
+                <span key={s} className="text-xs px-3 py-1.5 rounded-full bg-secondary text-muted-foreground border border-border">
+                  {s}
+                </span>
+              ))}
+            </div>
+          )}
         </motion.div>
 
         {/* Pricing */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="glass-strong rounded-2xl p-5"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <DollarSign className="w-4 h-4 text-gold" />
-            <h2 className="font-display font-semibold text-foreground">Pricing</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-secondary rounded-xl p-3 text-center">
-              <p className="text-xs text-muted-foreground mb-1">Hourly</p>
-              <p className="font-display text-xl font-bold text-gold">${companion.hourlyRate}</p>
+        {(companion.hourlyRate > 0 || companion.overnightRate > 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="glass-strong rounded-2xl p-5"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <DollarSign className="w-4 h-4 text-gold" />
+              <h2 className="font-display font-semibold text-foreground">Pricing</h2>
             </div>
-            <div className="bg-secondary rounded-xl p-3 text-center">
-              <p className="text-xs text-muted-foreground mb-1">Overnight</p>
-              <p className="font-display text-xl font-bold text-gold">${companion.overnightRate}</p>
+            <div className="grid grid-cols-2 gap-3">
+              {companion.hourlyRate > 0 && (
+                <div className="bg-secondary rounded-xl p-3 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Hourly</p>
+                  <p className="font-display text-xl font-bold text-gold">${companion.hourlyRate}</p>
+                </div>
+              )}
+              {companion.overnightRate > 0 && (
+                <div className="bg-secondary rounded-xl p-3 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Overnight</p>
+                  <p className="font-display text-xl font-bold text-gold">${companion.overnightRate}</p>
+                </div>
+              )}
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
       </div>
 
       {/* Fixed bottom CTA */}

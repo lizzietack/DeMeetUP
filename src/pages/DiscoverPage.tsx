@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, SlidersHorizontal, Grid3X3, Layers, X } from "lucide-react";
+import { Search, SlidersHorizontal, X } from "lucide-react";
 import CompanionCard from "@/components/CompanionCard";
-import { companions, SERVICE_OPTIONS } from "@/data/mock";
+import { useCompanions } from "@/hooks/use-companions";
+
+const SERVICE_OPTIONS = [
+  "Dinner Date", "Travel Companion", "Party Partner", "Social Events",
+  "City Tour", "Fitness Partner", "Concert Buddy", "Art Gallery",
+  "Wine Tasting", "Weekend Getaway", "Business Event", "Photography",
+];
 
 const DiscoverPage = () => {
+  const { data: companions = [], isLoading } = useCompanions();
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
@@ -55,7 +62,6 @@ const DiscoverPage = () => {
       </header>
 
       <div className="max-w-lg mx-auto px-4 pt-3">
-        {/* Filters panel */}
         <AnimatePresence>
           {showFilters && (
             <motion.div
@@ -65,7 +71,6 @@ const DiscoverPage = () => {
               className="overflow-hidden mb-4"
             >
               <div className="glass rounded-xl p-4 space-y-4">
-                {/* Gender filter */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Gender</p>
                   <div className="flex gap-2">
@@ -81,8 +86,6 @@ const DiscoverPage = () => {
                     ))}
                   </div>
                 </div>
-
-                {/* Services */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Services</p>
                   <div className="flex flex-wrap gap-1.5">
@@ -98,8 +101,6 @@ const DiscoverPage = () => {
                     ))}
                   </div>
                 </div>
-
-                {/* Price range */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">
                     Price: ${priceRange[0]} — ${priceRange[1]}/hr
@@ -117,17 +118,32 @@ const DiscoverPage = () => {
           )}
         </AnimatePresence>
 
-        {/* Results */}
-        <p className="text-xs text-muted-foreground mb-3">{filtered.length} companions found</p>
-        <div className="grid grid-cols-2 gap-3">
-          {filtered.map((c, i) => (
-            <CompanionCard key={c.id} companion={c} index={i} />
-          ))}
-        </div>
-        {filtered.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground">No companions match your filters</p>
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="glass rounded-2xl overflow-hidden">
+                <div className="aspect-[3/4] bg-secondary shimmer" />
+                <div className="p-3 space-y-2">
+                  <div className="h-4 bg-secondary rounded shimmer w-2/3" />
+                  <div className="h-3 bg-secondary rounded shimmer w-1/2" />
+                </div>
+              </div>
+            ))}
           </div>
+        ) : (
+          <>
+            <p className="text-xs text-muted-foreground mb-3">{filtered.length} companions found</p>
+            <div className="grid grid-cols-2 gap-3">
+              {filtered.map((c, i) => (
+                <CompanionCard key={c.id} companion={c} index={i} />
+              ))}
+            </div>
+            {filtered.length === 0 && (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground">No companions match your filters</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
