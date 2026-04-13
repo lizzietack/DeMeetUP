@@ -11,8 +11,21 @@ const CompanionProfilePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: companion, isLoading } = useCompanion(id);
+  const { user } = useAuth();
+  const startConversation = useStartConversation();
   const [activeImage, setActiveImage] = useState(0);
   const [liked, setLiked] = useState(false);
+
+  const handleMessage = async () => {
+    if (!user) { navigate("/login"); return; }
+    if (!companion?.userId) { toast.error("Cannot message this companion"); return; }
+    try {
+      const conversationId = await startConversation.mutateAsync(companion.userId);
+      navigate(`/chat/${conversationId}`);
+    } catch (e) {
+      toast.error("Failed to start conversation");
+    }
+  };
 
   if (isLoading) {
     return (
