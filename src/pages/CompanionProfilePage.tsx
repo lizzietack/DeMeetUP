@@ -255,6 +255,13 @@ const CompanionProfilePage = () => {
           </button>
         </div>
       </div>
+
+      <ReportUserModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        reportedUserId={companion?.userId || ""}
+        reportedName={companion?.name || "User"}
+      />
     </div>
   );
 };

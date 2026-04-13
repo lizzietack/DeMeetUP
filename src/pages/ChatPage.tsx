@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Send, Mic, Image, MoreVertical, Check, CheckCheck,
-  DollarSign, Sparkles, ShieldBan,
+  DollarSign, Sparkles, ShieldBan, Flag,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import TipModal from "@/components/TipModal";
 import { useBlockUser, useBlockedUsers } from "@/hooks/use-blocked-users";
+import ReportUserModal from "@/components/ReportUserModal";
 
 const ChatPage = () => {
   const { id: conversationId } = useParams();
@@ -23,6 +24,7 @@ const ChatPage = () => {
   const [message, setMessage] = useState("");
   const [showTipModal, setShowTipModal] = useState(false);
   const [showChatMenu, setShowChatMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
