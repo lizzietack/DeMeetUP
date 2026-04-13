@@ -1,12 +1,46 @@
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Bell, Globe, Lock, Palette, LogOut, ChevronRight, User, Moon } from "lucide-react";
+import { ArrowLeft, Bell, Lock, LogOut, Moon, Globe, Eye, EyeOff, X, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+const useLocalToggle = (key: string, defaultValue = true) => {
+  const [value, setValue] = useState(() => {
+    const stored = localStorage.getItem(key);
+    return stored !== null ? stored === "true" : defaultValue;
+  });
+  const toggle = (v: boolean) => {
+    setValue(v);
+    localStorage.setItem(key, String(v));
+  };
+  return [value, toggle] as const;
+};
 
 const SettingsPage = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+
+  // Notification toggles
+  const [msgNotif, setMsgNotif] = useLocalToggle("notif_messages", true);
+  const [bookingNotif, setBookingNotif] = useLocalToggle("notif_bookings", true);
+  const [updateNotif, setUpdateNotif] = useLocalToggle("notif_updates", false);
+
+  // Theme toggle (dark is default/only for now)
+  const [darkMode, setDarkMode] = useLocalToggle("theme_dark", true);
+
+  // Password change
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -14,28 +48,34 @@ const SettingsPage = () => {
     navigate("/login");
   };
 
-  const settingsSections = [
-    {
-      title: "Account",
-      items: [
-        { icon: User, label: "Account Preferences", description: "Email, language, region" },
-        { icon: Lock, label: "Password & Security", description: "Change password, 2FA" },
-      ],
-    },
-    {
-      title: "Notifications",
-      items: [
-        { icon: Bell, label: "Push Notifications", description: "Messages, bookings, updates" },
-      ],
-    },
-    {
-      title: "Appearance",
-      items: [
-        { icon: Moon, label: "Theme", description: "Dark mode" },
-        { icon: Globe, label: "Language", description: "English" },
-      ],
-    },
-  ];
+  const handlePasswordChange = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success("Password updated successfully");
+      setShowPasswordModal(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update password");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   return (
     <div className="min-h-screen pb-20">
@@ -53,29 +93,63 @@ const SettingsPage = () => {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-lg mx-auto px-4 pt-6 space-y-5"
       >
-        {settingsSections.map((section) => (
-          <div key={section.title} className="glass rounded-xl overflow-hidden">
-            <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {section.title}
-            </h2>
-            {section.items.map(({ icon: Icon, label, description }) => (
-              <button
-                key={label}
-                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/50 transition-colors text-left border-t border-border/30"
-              >
-                <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{label}</p>
-                  <p className="text-xs text-muted-foreground">{description}</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-              </button>
-            ))}
-          </div>
-        ))}
+        {/* Notifications */}
+        <div className="glass rounded-xl overflow-hidden">
+          <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Notifications
+          </h2>
+          <ToggleRow icon={Bell} label="Messages" description="New chat messages" checked={msgNotif} onCheckedChange={setMsgNotif} />
+          <ToggleRow icon={Bell} label="Bookings" description="Booking updates & requests" checked={bookingNotif} onCheckedChange={setBookingNotif} />
+          <ToggleRow icon={Bell} label="App Updates" description="New features & announcements" checked={updateNotif} onCheckedChange={setUpdateNotif} />
+        </div>
 
+        {/* Password & Security */}
+        <div className="glass rounded-xl overflow-hidden">
+          <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Password & Security
+          </h2>
+          <button
+            onClick={() => setShowPasswordModal(true)}
+            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/50 transition-colors text-left border-t border-border/30"
+          >
+            <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+              <Lock className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Change Password</p>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
+            </div>
+          </button>
+        </div>
+
+        {/* Appearance */}
+        <div className="glass rounded-xl overflow-hidden">
+          <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Appearance
+          </h2>
+          <ToggleRow
+            icon={Moon}
+            label="Dark Mode"
+            description="Always on for this theme"
+            checked={darkMode}
+            onCheckedChange={(v) => {
+              setDarkMode(v);
+              toast.info(v ? "Dark mode enabled" : "Dark mode is the default theme");
+            }}
+          />
+          <div className="flex items-center gap-3 px-4 py-3.5 border-t border-border/30">
+            <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Language</p>
+              <p className="text-xs text-muted-foreground">English</p>
+            </div>
+            <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">Default</span>
+          </div>
+        </div>
+
+        {/* Log Out */}
         <button
           onClick={handleSignOut}
           className="w-full flex items-center justify-center gap-2 py-3.5 glass rounded-xl text-destructive text-sm font-semibold hover:bg-destructive/10 transition-colors"
@@ -85,8 +159,111 @@ const SettingsPage = () => {
 
         <p className="text-center text-[10px] text-muted-foreground pb-4">Version 1.0.0</p>
       </motion.div>
+
+      {/* Password Change Modal */}
+      <AnimatePresence>
+        {showPasswordModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/80 backdrop-blur-sm px-4 pb-4"
+            onClick={() => setShowPasswordModal(false)}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md glass rounded-2xl p-6 space-y-5"
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-lg font-bold text-foreground">Change Password</h2>
+                <button onClick={() => setShowPasswordModal(false)} className="p-1 rounded-full hover:bg-secondary">
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      type={showNew ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      className="bg-secondary border-border/50 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNew(!showNew)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    >
+                      {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Confirm New Password</Label>
+                  <Input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="bg-secondary border-border/50"
+                  />
+                  {confirmPassword && newPassword && (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      {newPassword === confirmPassword ? (
+                        <><Check className="w-3 h-3 text-green-400" /><span className="text-green-400">Passwords match</span></>
+                      ) : (
+                        <><X className="w-3 h-3 text-destructive" /><span className="text-destructive">Passwords don't match</span></>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Button
+                onClick={handlePasswordChange}
+                disabled={changingPassword || !newPassword || newPassword !== confirmPassword}
+                className="w-full gradient-gold text-primary-foreground font-semibold rounded-xl h-11"
+              >
+                {changingPassword ? "Updating…" : "Update Password"}
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
+
+const ToggleRow = ({
+  icon: Icon,
+  label,
+  description,
+  checked,
+  onCheckedChange,
+}: {
+  icon: any;
+  label: string;
+  description: string;
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
+}) => (
+  <div className="flex items-center gap-3 px-4 py-3.5 border-t border-border/30">
+    <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+      <Icon className="w-4 h-4 text-muted-foreground" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-medium text-foreground">{label}</p>
+      <p className="text-xs text-muted-foreground">{description}</p>
+    </div>
+    <Switch checked={checked} onCheckedChange={onCheckedChange} />
+  </div>
+);
 
 export default SettingsPage;
