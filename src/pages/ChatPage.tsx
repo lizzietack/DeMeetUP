@@ -1,10 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Send, Mic, Image, MoreVertical, Check, CheckCheck,
-  DollarSign, Sparkles,
+  DollarSign, Sparkles, ShieldBan,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useMessages, useSendMessage, usePresence, useTypingIndicator,
@@ -13,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import TipModal from "@/components/TipModal";
+import { useBlockUser, useBlockedUsers } from "@/hooks/use-blocked-users";
 
 const ChatPage = () => {
   const { id: conversationId } = useParams();
@@ -20,6 +22,7 @@ const ChatPage = () => {
   const { user } = useAuth();
   const [message, setMessage] = useState("");
   const [showTipModal, setShowTipModal] = useState(false);
+  const [showChatMenu, setShowChatMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -27,6 +30,9 @@ const ChatPage = () => {
   const sendMessage = useSendMessage();
   const { setTyping } = usePresence();
   const isOtherTyping = useTypingIndicator(conversationId);
+  const blockUser = useBlockUser();
+  const { data: blockedUsers = [] } = useBlockedUsers();
+
 
   // Get conversation info (other user)
   const { data: convInfo } = useQuery({
@@ -58,7 +64,19 @@ const ChatPage = () => {
     },
   });
 
-  // Auto-scroll on new messages
+  const isOtherBlocked = convInfo?.otherId ? blockedUsers.some((b) => b.blocked_id === convInfo.otherId) : false;
+
+  const handleBlockFromChat = async () => {
+    if (!convInfo?.otherId) return;
+    try {
+      await blockUser.mutateAsync(convInfo.otherId);
+      toast.success(`${convInfo.name} has been blocked`);
+      setShowChatMenu(false);
+    } catch {
+      toast.error("Failed to block user");
+    }
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isOtherTyping]);
@@ -124,9 +142,30 @@ const ChatPage = () => {
           <button onClick={() => setShowTipModal(true)} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors" title="Send Tip">
             <DollarSign className="w-5 h-5 text-gold" />
           </button>
-          <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors">
-            <MoreVertical className="w-5 h-5 text-muted-foreground" />
-          </button>
+          <div className="relative">
+            <button onClick={() => setShowChatMenu(!showChatMenu)} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors">
+              <MoreVertical className="w-5 h-5 text-muted-foreground" />
+            </button>
+            <AnimatePresence>
+              {showChatMenu && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="absolute right-0 top-11 glass-strong rounded-xl overflow-hidden min-w-[160px] z-50"
+                >
+                  <button
+                    onClick={handleBlockFromChat}
+                    disabled={blockUser.isPending || isOtherBlocked}
+                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                  >
+                    <ShieldBan className="w-4 h-4" />
+                    {isOtherBlocked ? "Already Blocked" : "Block User"}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </header>
 
