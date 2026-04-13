@@ -38,12 +38,15 @@ const SafetyPrivacyPage = () => {
       });
   }, [user]);
 
-  const updatePrivacy = async (field: string, value: boolean) => {
+  const updatePrivacy = async (field: "profile_visible" | "show_online_status", value: boolean) => {
     if (!user) return;
     setSaving(true);
+    const update = field === "profile_visible"
+      ? { profile_visible: value }
+      : { show_online_status: value };
     const { error } = await supabase
       .from("profiles")
-      .update({ [field]: value })
+      .update(update)
       .eq("user_id", user.id);
     setSaving(false);
     if (error) {
