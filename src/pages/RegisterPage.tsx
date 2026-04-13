@@ -12,9 +12,16 @@ const RegisterPage = () => {
   const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signUp } = useAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { signUp, user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Redirect if already authenticated
+  if (!loading && user) {
+    navigate("/select-role", { replace: true });
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,12 +55,22 @@ const RegisterPage = () => {
 
         <button
           type="button"
+          disabled={googleLoading}
           onClick={async () => {
-            const result = await lovable.auth.signInWithOAuth("google", {
-              redirect_uri: window.location.origin,
-            });
-            if (result.error) {
-              toast({ title: "Google sign-in failed", description: String(result.error), variant: "destructive" });
+            setGoogleLoading(true);
+            try {
+              const result = await lovable.auth.signInWithOAuth("google", {
+                redirect_uri: window.location.origin,
+              });
+              if (result.error) {
+                toast({ title: "Google sign-in failed", description: String(result.error), variant: "destructive" });
+                setGoogleLoading(false);
+              } else if (!result.redirected) {
+                navigate("/select-role", { replace: true });
+              }
+            } catch (err: any) {
+              toast({ title: "Google sign-in failed", description: err?.message || "Something went wrong", variant: "destructive" });
+              setGoogleLoading(false);
             }
           }}
           className="w-full flex items-center justify-center gap-3 bg-secondary hover:bg-secondary/80 text-foreground font-medium py-3 rounded-xl transition-all"
