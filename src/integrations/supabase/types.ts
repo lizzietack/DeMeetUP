@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          booking_date: string
+          booking_time: string
+          companion_profile_id: string
+          created_at: string
+          duration_hours: number
+          guest_id: string
+          id: string
+          notes: string | null
+          platform_fee: number
+          service: string
+          service_fee: number
+          status: Database["public"]["Enums"]["booking_status"]
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          booking_date: string
+          booking_time: string
+          companion_profile_id: string
+          created_at?: string
+          duration_hours?: number
+          guest_id: string
+          id?: string
+          notes?: string | null
+          platform_fee?: number
+          service: string
+          service_fee?: number
+          status?: Database["public"]["Enums"]["booking_status"]
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          booking_date?: string
+          booking_time?: string
+          companion_profile_id?: string
+          created_at?: string
+          duration_hours?: number
+          guest_id?: string
+          id?: string
+          notes?: string | null
+          platform_fee?: number
+          service?: string
+          service_fee?: number
+          status?: Database["public"]["Enums"]["booking_status"]
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_companion_profile_id_fkey"
+            columns: ["companion_profile_id"]
+            isOneToOne: false
+            referencedRelation: "companion_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companion_images: {
         Row: {
           companion_profile_id: string
@@ -303,6 +362,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      booking_status:
+        | "pending"
+        | "accepted"
+        | "rejected"
+        | "completed"
+        | "cancelled"
       platform_role: "guest" | "companion"
     }
     CompositeTypes: {
@@ -432,6 +497,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      booking_status: [
+        "pending",
+        "accepted",
+        "rejected",
+        "completed",
+        "cancelled",
+      ],
       platform_role: ["guest", "companion"],
     },
   },
