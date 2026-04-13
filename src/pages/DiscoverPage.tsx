@@ -57,6 +57,17 @@ const HorizontalSection = ({
   );
 };
 
+type SortOption = "newest" | "price_low" | "price_high" | "rating";
+
+const SORT_LABELS: Record<SortOption, string> = {
+  newest: "Newest First",
+  price_low: "Price: Low → High",
+  price_high: "Price: High → Low",
+  rating: "Top Rated",
+};
+
+const PAGE_SIZE = 12;
+
 const DiscoverPage = () => {
   const { data: companions = [], isLoading } = useCompanions();
   const { user, profile } = useAuth();
@@ -68,6 +79,10 @@ const DiscoverPage = () => {
   const [priceMax, setPriceMax] = useState(1000);
   const [selectedGender, setSelectedGender] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Unique locations for suggestions
   const uniqueLocations = useMemo(() => {
@@ -85,16 +100,59 @@ const DiscoverPage = () => {
       .slice(0, 5);
   }, [uniqueLocations, locationFilter]);
 
-  const filtered = companions.filter((c) => {
-    if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !c.location.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !c.services.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))) return false;
-    if (selectedServices.length > 0 && !selectedServices.some((s) => c.services.includes(s))) return false;
-    if (c.hourlyRate < priceMin || c.hourlyRate > priceMax) return false;
-    if (selectedGender !== "all" && c.gender !== selectedGender) return false;
-    if (locationFilter && !c.location.toLowerCase().includes(locationFilter.toLowerCase())) return false;
-    return true;
-  });
+  const filtered = useMemo(() => {
+    let result = companions.filter((c) => {
+      if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !c.location.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !c.services.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))) return false;
+      if (selectedServices.length > 0 && !selectedServices.some((s) => c.services.includes(s))) return false;
+      if (c.hourlyRate < priceMin || c.hourlyRate > priceMax) return false;
+      if (selectedGender !== "all" && c.gender !== selectedGender) return false;
+      if (locationFilter && !c.location.toLowerCase().includes(locationFilter.toLowerCase())) return false;
+      return true;
+    });
+
+    // Sort
+    switch (sortBy) {
+      case "price_low":
+        result.sort((a, b) => a.hourlyRate - b.hourlyRate);
+        break;
+      case "price_high":
+        result.sort((a, b) => b.hourlyRate - a.hourlyRate);
+        break;
+      case "rating":
+        result.sort((a, b) => b.rating - a.rating);
+        break;
+      case "newest":
+      default:
+        result.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+        break;
+    }
+    return result;
+  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, sortBy]);
+
+  // Reset visible count when filters/sort change
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, sortBy]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && visibleCount < filtered.length) {
+          setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filtered.length));
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [visibleCount, filtered.length]);
+
+  const visibleCompanions = filtered.slice(0, visibleCount);
 
   const toggleService = (s: string) => {
     setSelectedServices((prev) =>
