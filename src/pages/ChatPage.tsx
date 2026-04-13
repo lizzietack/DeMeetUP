@@ -164,6 +164,13 @@ const ChatPage = () => {
                     <ShieldBan className="w-4 h-4" />
                     {isOtherBlocked ? "Already Blocked" : "Block User"}
                   </button>
+                  <button
+                    onClick={() => { setShowReportModal(true); setShowChatMenu(false); }}
+                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary/50 transition-colors border-t border-border/30"
+                  >
+                    <Flag className="w-4 h-4" />
+                    Report User
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
