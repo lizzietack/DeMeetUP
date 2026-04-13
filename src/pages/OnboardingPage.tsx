@@ -183,6 +183,7 @@ const OnboardingPage = () => {
           displayName.trim().length >= 2 &&
           gender !== "" &&
           age >= 18 &&
+          country !== "" &&
           location.trim().length >= 2
         );
       }
