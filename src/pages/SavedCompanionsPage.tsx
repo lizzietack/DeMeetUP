@@ -21,7 +21,7 @@ const SavedCompanionsPage = () => {
       const companion = allCompanions.find((c) => c.id === s.companion_profile_id);
       return companion ? { ...companion, savedId: s.id, savedAt: s.created_at } : null;
     })
-    .filter(Boolean) as (ReturnType<typeof allCompanions>[number] & { savedId: string; savedAt: string })[];
+    .filter((c): c is NonNullable<typeof c> => c !== null);
 
   const handleUnsave = (companionProfileId: string, name: string) => {
     toggleSave.mutate(
