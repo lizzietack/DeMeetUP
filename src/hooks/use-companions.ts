@@ -5,6 +5,7 @@ import type { Companion } from "@/data/mock";
 interface DbCompanionProfile {
   id: string;
   user_id: string;
+  created_at: string;
   hourly_rate: number | null;
   overnight_rate: number | null;
   services: string[];

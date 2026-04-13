@@ -2,6 +2,7 @@ export interface Companion {
   id: string;
   userId?: string;
   name: string;
+  createdAt?: string;
   age: number;
   location: string;
   bio: string;
