@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { format, subDays, eachDayOfInterval } from "date-fns";
 
 export const useAdminStats = () => {
   return useQuery({
@@ -116,6 +117,59 @@ export const useAdminUpdateReport = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-reports"] });
       queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+  });
+};
+
+export const useAdminAnalytics = (days: number = 30) => {
+  return useQuery({
+    queryKey: ["admin-analytics", days],
+    queryFn: async () => {
+      const startDate = subDays(new Date(), days);
+      const interval = eachDayOfInterval({ start: startDate, end: new Date() });
+      const dateLabels = interval.map(d => format(d, "yyyy-MM-dd"));
+
+      const [profilesRes, bookingsRes, reportsRes] = await Promise.all([
+        supabase.from("profiles").select("created_at").gte("created_at", startDate.toISOString()).order("created_at"),
+        supabase.from("bookings").select("created_at, status, total").gte("created_at", startDate.toISOString()).order("created_at"),
+        supabase.from("reports").select("created_at").gte("created_at", startDate.toISOString()).order("created_at"),
+      ]);
+
+      const signupsByDay = new Map<string, number>();
+      const bookingsByDay = new Map<string, number>();
+      const revenueByDay = new Map<string, number>();
+      const reportsByDay = new Map<string, number>();
+
+      dateLabels.forEach(d => {
+        signupsByDay.set(d, 0);
+        bookingsByDay.set(d, 0);
+        revenueByDay.set(d, 0);
+        reportsByDay.set(d, 0);
+      });
+
+      (profilesRes.data || []).forEach(p => {
+        const day = format(new Date(p.created_at), "yyyy-MM-dd");
+        signupsByDay.set(day, (signupsByDay.get(day) || 0) + 1);
+      });
+
+      (bookingsRes.data || []).forEach(b => {
+        const day = format(new Date(b.created_at), "yyyy-MM-dd");
+        bookingsByDay.set(day, (bookingsByDay.get(day) || 0) + 1);
+        revenueByDay.set(day, (revenueByDay.get(day) || 0) + Number(b.total || 0));
+      });
+
+      (reportsRes.data || []).forEach(r => {
+        const day = format(new Date(r.created_at), "yyyy-MM-dd");
+        reportsByDay.set(day, (reportsByDay.get(day) || 0) + 1);
+      });
+
+      return dateLabels.map(date => ({
+        date: format(new Date(date), "MMM dd"),
+        signups: signupsByDay.get(date) || 0,
+        bookings: bookingsByDay.get(date) || 0,
+        revenue: revenueByDay.get(date) || 0,
+        reports: reportsByDay.get(date) || 0,
+      }));
     },
   });
 };
