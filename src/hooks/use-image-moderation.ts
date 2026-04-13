@@ -145,6 +145,13 @@ export const useAdminUpdateImage = () => {
       status: "approved" | "rejected";
       rejectionReason?: string;
     }) => {
+      // Get the image record first for watermarking
+      const { data: imageRecord } = await supabase
+        .from("image_moderation")
+        .select("image_url")
+        .eq("id", moderationId)
+        .single();
+
       const { error } = await supabase
         .from("image_moderation")
         .update({
@@ -156,6 +163,29 @@ export const useAdminUpdateImage = () => {
         .eq("id", moderationId);
 
       if (error) throw error;
+
+      // Apply watermark to approved images
+      if (status === "approved" && imageRecord?.image_url) {
+        try {
+          const { data: session } = await supabase.auth.getSession();
+          await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/watermark-image`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.session?.access_token}`,
+              },
+              body: JSON.stringify({
+                image_url: imageRecord.image_url,
+                moderation_id: moderationId,
+              }),
+            }
+          );
+        } catch (e) {
+          console.error("Watermark call failed:", e);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-images"] });
