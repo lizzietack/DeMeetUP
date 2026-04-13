@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Send, Mic, Image, MoreVertical, Check, CheckCheck,
-  DollarSign, Sparkles,
+  DollarSign, Sparkles, ShieldBan,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import TipModal from "@/components/TipModal";
+import { useBlockUser, useBlockedUsers } from "@/hooks/use-blocked-users";
 
 const ChatPage = () => {
   const { id: conversationId } = useParams();
@@ -20,6 +21,7 @@ const ChatPage = () => {
   const { user } = useAuth();
   const [message, setMessage] = useState("");
   const [showTipModal, setShowTipModal] = useState(false);
+  const [showChatMenu, setShowChatMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -27,6 +29,21 @@ const ChatPage = () => {
   const sendMessage = useSendMessage();
   const { setTyping } = usePresence();
   const isOtherTyping = useTypingIndicator(conversationId);
+  const blockUser = useBlockUser();
+  const { data: blockedUsers = [] } = useBlockedUsers();
+
+  const isOtherBlocked = convInfo?.otherId ? blockedUsers.some((b) => b.blocked_id === convInfo.otherId) : false;
+
+  const handleBlockFromChat = async () => {
+    if (!convInfo?.otherId) return;
+    try {
+      await blockUser.mutateAsync(convInfo.otherId);
+      toast.success(`${convInfo.name} has been blocked`);
+      setShowChatMenu(false);
+    } catch {
+      toast.error("Failed to block user");
+    }
+  };
 
   // Get conversation info (other user)
   const { data: convInfo } = useQuery({
