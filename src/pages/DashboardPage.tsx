@@ -30,9 +30,9 @@ const DashboardPage = () => {
   ];
 
   const menuItems = [
-    { label: "My Profile", icon: User, path: "/profile/edit" },
-    { label: "Saved Companions", icon: Heart, path: "/saved" },
-    { label: "Safety & Privacy", icon: Shield, path: "/safety" },
+    { label: "My Profile", icon: User, path: "/profile" },
+    { label: "Saved Companions", icon: Heart, path: "/saved-companions" },
+    { label: "Safety & Privacy", icon: Shield, path: "/safety-privacy" },
     { label: "Settings", icon: Settings, path: "/settings" },
   ];
 

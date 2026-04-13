@@ -19,6 +19,10 @@ import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
 import RegisterPage from "./pages/RegisterPage.tsx";
 import SelectRolePage from "./pages/SelectRolePage.tsx";
 import CompanionSetupPage from "./pages/CompanionSetupPage.tsx";
+import ProfilePage from "./pages/ProfilePage.tsx";
+import SavedCompanionsPage from "./pages/SavedCompanionsPage.tsx";
+import SafetyPrivacyPage from "./pages/SafetyPrivacyPage.tsx";
+import SettingsPage from "./pages/SettingsPage.tsx";
 import BottomNav from "./components/BottomNav.tsx";
 
 const queryClient = new QueryClient();
@@ -35,7 +39,7 @@ const AppContent = () => {
   const { user } = useAuth();
   const hideNav = location.pathname.startsWith("/chat/") ||
     location.pathname.startsWith("/book/") ||
-    ["/login", "/register", "/select-role", "/companion-setup", "/forgot-password", "/reset-password"].includes(location.pathname);
+    ["/login", "/register", "/select-role", "/companion-setup", "/forgot-password", "/reset-password", "/profile", "/saved-companions", "/safety-privacy", "/settings"].includes(location.pathname);
 
   return (
     <>
@@ -56,6 +60,10 @@ const AppContent = () => {
         <Route path="/chat/:id" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
         <Route path="/book/:id" element={<ProtectedRoute><BookingPage /></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/saved-companions" element={<ProtectedRoute><SavedCompanionsPage /></ProtectedRoute>} />
+        <Route path="/safety-privacy" element={<ProtectedRoute><SafetyPrivacyPage /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!hideNav && <BottomNav />}
