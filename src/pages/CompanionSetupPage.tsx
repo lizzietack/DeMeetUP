@@ -10,9 +10,11 @@ import {
 } from "lucide-react";
 
 const SERVICE_OPTIONS = [
-  "Dinner Date", "Travel Companion", "Party Partner", "Social Events",
-  "City Tour", "Fitness Partner", "Concert Buddy", "Art Gallery",
-  "Wine Tasting", "Weekend Getaway", "Business Event", "Photography",
+  "Girlfriend Experience", "Hookup", "Sensual Massage", "Nuru Massage",
+  "Happy Ending Massage", "Body-to-Body Massage", "Tantric Massage",
+  "Overnight Stay", "Dinner Date", "Travel Companion", "Party Partner",
+  "Striptease", "Role Play", "Couples Experience", "BDSM",
+  "Weekend Getaway", "Outcall", "Incall", "Video Call",
 ];
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
