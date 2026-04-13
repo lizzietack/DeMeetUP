@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      companion_images: {
+        Row: {
+          companion_profile_id: string
+          created_at: string
+          id: string
+          image_url: string
+          position: number
+        }
+        Insert: {
+          companion_profile_id: string
+          created_at?: string
+          id?: string
+          image_url: string
+          position?: number
+        }
+        Update: {
+          companion_profile_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companion_images_companion_profile_id_fkey"
+            columns: ["companion_profile_id"]
+            isOneToOne: false
+            referencedRelation: "companion_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companion_profiles: {
+        Row: {
+          availability: Json | null
+          created_at: string
+          custom_packages: Json | null
+          gender: string | null
+          hourly_rate: number | null
+          id: string
+          overnight_rate: number | null
+          services: string[] | null
+          updated_at: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          availability?: Json | null
+          created_at?: string
+          custom_packages?: Json | null
+          gender?: string | null
+          hourly_rate?: number | null
+          id?: string
+          overnight_rate?: number | null
+          services?: string[] | null
+          updated_at?: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          availability?: Json | null
+          created_at?: string
+          custom_packages?: Json | null
+          gender?: string | null
+          hourly_rate?: number | null
+          id?: string
+          overnight_rate?: number | null
+          services?: string[] | null
+          updated_at?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
