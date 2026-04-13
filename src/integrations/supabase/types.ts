@@ -286,6 +286,39 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          reason: Database["public"]["Enums"]["report_reason"]
+          reported_user_id: string
+          reporter_id: string
+          status: Database["public"]["Enums"]["report_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason: Database["public"]["Enums"]["report_reason"]
+          reported_user_id: string
+          reporter_id: string
+          status?: Database["public"]["Enums"]["report_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: Database["public"]["Enums"]["report_reason"]
+          reported_user_id?: string
+          reporter_id?: string
+          status?: Database["public"]["Enums"]["report_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_interactions: {
         Row: {
           companion_profile_id: string
@@ -396,6 +429,8 @@ export type Database = {
         | "completed"
         | "cancelled"
       platform_role: "guest" | "companion"
+      report_reason: "harassment" | "spam" | "inappropriate" | "scam" | "other"
+      report_status: "pending" | "reviewed" | "resolved"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -532,6 +567,8 @@ export const Constants = {
         "cancelled",
       ],
       platform_role: ["guest", "companion"],
+      report_reason: ["harassment", "spam", "inappropriate", "scam", "other"],
+      report_status: ["pending", "reviewed", "resolved"],
     },
   },
 } as const
