@@ -2,7 +2,8 @@ import { motion } from "framer-motion";
 import { MapPin, Star, BadgeCheck, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Companion } from "@/data/mock";
-import { useState } from "react";
+import { useSavedCompanionIds, useToggleSaveCompanion } from "@/hooks/use-saved-companions";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CompanionCardProps {
   companion: Companion;
@@ -11,7 +12,10 @@ interface CompanionCardProps {
 
 const CompanionCard = ({ companion, index = 0 }: CompanionCardProps) => {
   const navigate = useNavigate();
-  const [liked, setLiked] = useState(false);
+  const { user } = useAuth();
+  const savedIds = useSavedCompanionIds();
+  const toggleSave = useToggleSaveCompanion();
+  const isSaved = savedIds.has(companion.id);
 
   return (
     <motion.div
@@ -42,11 +46,16 @@ const CompanionCard = ({ companion, index = 0 }: CompanionCardProps) => {
 
           {/* Like button */}
           <button
-            onClick={(e) => { e.stopPropagation(); setLiked(!liked); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!user) { navigate("/login"); return; }
+              toggleSave.mutate({ companionProfileId: companion.id, isSaved });
+            }}
+            disabled={toggleSave.isPending}
             className="absolute top-3 right-3 w-9 h-9 glass rounded-full flex items-center justify-center
-                       hover:bg-destructive/20 transition-colors"
+                       hover:bg-destructive/20 transition-colors disabled:opacity-50"
           >
-            <Heart className={`w-4 h-4 transition-colors ${liked ? "fill-destructive text-destructive" : "text-foreground/70"}`} />
+            <Heart className={`w-4 h-4 transition-colors ${isSaved ? "fill-destructive text-destructive" : "text-foreground/70"}`} />
           </button>
 
           {/* Bottom info overlay */}
