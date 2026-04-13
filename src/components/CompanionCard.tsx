@@ -79,7 +79,7 @@ const CompanionCard = ({ companion, index = 0 }: CompanionCardProps) => {
                 <span className="text-xs text-muted-foreground">({companion.reviewCount})</span>
               </div>
               <span className="text-gold font-display font-semibold text-sm">
-                ${companion.hourlyRate}/hr
+                {companion.currencySymbol || "$"}{companion.hourlyRate}/hr
               </span>
             </div>
           </div>
