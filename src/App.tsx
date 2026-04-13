@@ -16,6 +16,7 @@ import FeaturedPage from "./pages/FeaturedPage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
 import RegisterPage from "./pages/RegisterPage.tsx";
 import SelectRolePage from "./pages/SelectRolePage.tsx";
+import CompanionSetupPage from "./pages/CompanionSetupPage.tsx";
 import BottomNav from "./components/BottomNav.tsx";
 
 const queryClient = new QueryClient();
@@ -32,7 +33,7 @@ const AppContent = () => {
   const { user } = useAuth();
   const hideNav = location.pathname.startsWith("/chat/") ||
     location.pathname.startsWith("/book/") ||
-    ["/login", "/register", "/select-role"].includes(location.pathname);
+    ["/login", "/register", "/select-role", "/companion-setup"].includes(location.pathname);
 
   return (
     <>
@@ -43,6 +44,7 @@ const AppContent = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/select-role" element={<ProtectedRoute><SelectRolePage /></ProtectedRoute>} />
+        <Route path="/companion-setup" element={<ProtectedRoute><CompanionSetupPage /></ProtectedRoute>} />
         <Route path="/discover" element={<DiscoverPage />} />
         <Route path="/featured" element={<FeaturedPage />} />
         <Route path="/companion/:id" element={<CompanionProfilePage />} />
