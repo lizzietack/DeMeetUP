@@ -64,7 +64,19 @@ const ChatPage = () => {
     },
   });
 
-  // Auto-scroll on new messages
+  const isOtherBlocked = convInfo?.otherId ? blockedUsers.some((b) => b.blocked_id === convInfo.otherId) : false;
+
+  const handleBlockFromChat = async () => {
+    if (!convInfo?.otherId) return;
+    try {
+      await blockUser.mutateAsync(convInfo.otherId);
+      toast.success(`${convInfo.name} has been blocked`);
+      setShowChatMenu(false);
+    } catch {
+      toast.error("Failed to block user");
+    }
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isOtherTyping]);
