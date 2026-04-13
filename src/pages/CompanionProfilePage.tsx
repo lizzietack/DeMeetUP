@@ -5,6 +5,7 @@ import { useCompanion } from "@/hooks/use-companions";
 import { useStartConversation } from "@/hooks/use-chat";
 import { useTrackInteraction } from "@/hooks/use-recommendations";
 import { useBlockUser, useBlockedUsers } from "@/hooks/use-blocked-users";
+import { useSavedCompanionIds, useToggleSaveCompanion } from "@/hooks/use-saved-companions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -18,6 +19,9 @@ const CompanionProfilePage = () => {
   const { trackView, trackLike } = useTrackInteraction();
   const [activeImage, setActiveImage] = useState(0);
   const [liked, setLiked] = useState(false);
+  const savedIds = useSavedCompanionIds();
+  const toggleSave = useToggleSaveCompanion();
+  const isSaved = id ? savedIds.has(id) : false;
   const [showMenu, setShowMenu] = useState(false);
   const blockUser = useBlockUser();
   const { data: blockedUsers = [] } = useBlockedUsers();
