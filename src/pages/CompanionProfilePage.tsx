@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft, BadgeCheck, Star, MapPin, Heart, Share2, MessageCircle, Calendar, DollarSign } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, BadgeCheck, Star, MapPin, Heart, Share2, MessageCircle, Calendar, DollarSign, ShieldBan, MoreVertical } from "lucide-react";
 import { useCompanion } from "@/hooks/use-companions";
 import { useStartConversation } from "@/hooks/use-chat";
 import { useTrackInteraction } from "@/hooks/use-recommendations";
+import { useBlockUser, useBlockedUsers } from "@/hooks/use-blocked-users";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -17,6 +18,23 @@ const CompanionProfilePage = () => {
   const { trackView, trackLike } = useTrackInteraction();
   const [activeImage, setActiveImage] = useState(0);
   const [liked, setLiked] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const blockUser = useBlockUser();
+  const { data: blockedUsers = [] } = useBlockedUsers();
+
+  const isBlocked = companion?.userId ? blockedUsers.some((b) => b.blocked_id === companion.userId) : false;
+
+  const handleBlock = async () => {
+    if (!user) { navigate("/login"); return; }
+    if (!companion?.userId) return;
+    try {
+      await blockUser.mutateAsync(companion.userId);
+      toast.success(`${companion.name} has been blocked`);
+      setShowMenu(false);
+    } catch {
+      toast.error("Failed to block user");
+    }
+  };
 
   // Track profile view
   useEffect(() => {
@@ -85,6 +103,30 @@ const CompanionProfilePage = () => {
             <button className="w-10 h-10 glass rounded-full flex items-center justify-center">
               <Share2 className="w-5 h-5 text-foreground" />
             </button>
+            <div className="relative">
+              <button onClick={() => setShowMenu(!showMenu)} className="w-10 h-10 glass rounded-full flex items-center justify-center">
+                <MoreVertical className="w-5 h-5 text-foreground" />
+              </button>
+              <AnimatePresence>
+                {showMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="absolute right-0 top-12 glass-strong rounded-xl overflow-hidden min-w-[160px] z-50"
+                  >
+                    <button
+                      onClick={handleBlock}
+                      disabled={blockUser.isPending || isBlocked}
+                      className="w-full flex items-center gap-2 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                    >
+                      <ShieldBan className="w-4 h-4" />
+                      {isBlocked ? "Already Blocked" : "Block User"}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
