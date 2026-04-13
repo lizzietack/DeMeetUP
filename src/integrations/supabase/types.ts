@@ -231,7 +231,9 @@ export type Database = {
           display_name: string | null
           id: string
           location: string | null
+          profile_visible: boolean
           role: Database["public"]["Enums"]["platform_role"]
+          show_online_status: boolean
           updated_at: string
           user_id: string
         }
@@ -242,7 +244,9 @@ export type Database = {
           display_name?: string | null
           id?: string
           location?: string | null
+          profile_visible?: boolean
           role?: Database["public"]["Enums"]["platform_role"]
+          show_online_status?: boolean
           updated_at?: string
           user_id: string
         }
@@ -253,7 +257,9 @@ export type Database = {
           display_name?: string | null
           id?: string
           location?: string | null
+          profile_visible?: boolean
           role?: Database["public"]["Enums"]["platform_role"]
+          show_online_status?: boolean
           updated_at?: string
           user_id?: string
         }
