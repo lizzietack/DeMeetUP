@@ -203,6 +203,48 @@ export type Database = {
         }
         Relationships: []
       }
+      image_moderation: {
+        Row: {
+          ai_analysis: Json | null
+          created_at: string
+          id: string
+          image_type: string
+          image_url: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["image_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_analysis?: Json | null
+          created_at?: string
+          id?: string
+          image_type?: string
+          image_url: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["image_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_analysis?: Json | null
+          created_at?: string
+          id?: string
+          image_type?: string
+          image_url?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["image_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -249,12 +291,18 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
+          date_of_birth: string | null
           display_name: string | null
+          flagged_for_review: boolean
           id: string
           location: string | null
+          photo_verified: boolean
+          profile_completed: boolean
           profile_visible: boolean
           role: Database["public"]["Enums"]["platform_role"]
+          selfie_verified: boolean
           show_online_status: boolean
+          trust_score: number
           updated_at: string
           user_id: string
         }
@@ -262,12 +310,18 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
+          flagged_for_review?: boolean
           id?: string
           location?: string | null
+          photo_verified?: boolean
+          profile_completed?: boolean
           profile_visible?: boolean
           role?: Database["public"]["Enums"]["platform_role"]
+          selfie_verified?: boolean
           show_online_status?: boolean
+          trust_score?: number
           updated_at?: string
           user_id: string
         }
@@ -275,12 +329,18 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
+          flagged_for_review?: boolean
           id?: string
           location?: string | null
+          photo_verified?: boolean
+          profile_completed?: boolean
           profile_visible?: boolean
           role?: Database["public"]["Enums"]["platform_role"]
+          selfie_verified?: boolean
           show_online_status?: boolean
+          trust_score?: number
           updated_at?: string
           user_id?: string
         }
@@ -449,6 +509,7 @@ export type Database = {
         | "rejected"
         | "completed"
         | "cancelled"
+      image_status: "pending_review" | "approved" | "rejected"
       platform_role: "guest" | "companion"
       report_reason: "harassment" | "spam" | "inappropriate" | "scam" | "other"
       report_status: "pending" | "reviewed" | "resolved"
@@ -587,6 +648,7 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      image_status: ["pending_review", "approved", "rejected"],
       platform_role: ["guest", "companion"],
       report_reason: ["harassment", "spam", "inappropriate", "scam", "other"],
       report_status: ["pending", "reviewed", "resolved"],
