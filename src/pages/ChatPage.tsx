@@ -5,6 +5,7 @@ import {
   DollarSign, Sparkles, ShieldBan,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useMessages, useSendMessage, usePresence, useTypingIndicator,
@@ -32,18 +33,6 @@ const ChatPage = () => {
   const blockUser = useBlockUser();
   const { data: blockedUsers = [] } = useBlockedUsers();
 
-  const isOtherBlocked = convInfo?.otherId ? blockedUsers.some((b) => b.blocked_id === convInfo.otherId) : false;
-
-  const handleBlockFromChat = async () => {
-    if (!convInfo?.otherId) return;
-    try {
-      await blockUser.mutateAsync(convInfo.otherId);
-      toast.success(`${convInfo.name} has been blocked`);
-      setShowChatMenu(false);
-    } catch {
-      toast.error("Failed to block user");
-    }
-  };
 
   // Get conversation info (other user)
   const { data: convInfo } = useQuery({
