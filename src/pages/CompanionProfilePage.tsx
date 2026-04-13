@@ -2,14 +2,30 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, BadgeCheck, Star, MapPin, Heart, Share2, MessageCircle, Calendar, DollarSign } from "lucide-react";
 import { useCompanion } from "@/hooks/use-companions";
+import { useStartConversation } from "@/hooks/use-chat";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
+import { toast } from "sonner";
 
 const CompanionProfilePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: companion, isLoading } = useCompanion(id);
+  const { user } = useAuth();
+  const startConversation = useStartConversation();
   const [activeImage, setActiveImage] = useState(0);
   const [liked, setLiked] = useState(false);
+
+  const handleMessage = async () => {
+    if (!user) { navigate("/login"); return; }
+    if (!companion?.userId) { toast.error("Cannot message this companion"); return; }
+    try {
+      const conversationId = await startConversation.mutateAsync(companion.userId);
+      navigate(`/chat/${conversationId}`);
+    } catch (e) {
+      toast.error("Failed to start conversation");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -154,11 +170,12 @@ const CompanionProfilePage = () => {
       <div className="fixed bottom-0 left-0 right-0 glass-strong border-t border-border/50 p-4 z-40">
         <div className="max-w-lg mx-auto flex gap-3">
           <button
-            onClick={() => navigate(`/chat/${companion.id}`)}
+            onClick={handleMessage}
+            disabled={startConversation.isPending}
             className="flex-1 bg-secondary text-foreground font-display font-semibold py-3 rounded-xl
-                       flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors"
+                       flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors disabled:opacity-50"
           >
-            <MessageCircle className="w-4 h-4" /> Message
+            <MessageCircle className="w-4 h-4" /> {startConversation.isPending ? "..." : "Message"}
           </button>
           <button
             onClick={() => navigate(`/book/${companion.id}`)}
