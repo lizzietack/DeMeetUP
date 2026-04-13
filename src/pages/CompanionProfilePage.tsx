@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, BadgeCheck, Star, MapPin, Heart, Share2, MessageCircle, Calendar, DollarSign, ShieldBan, MoreVertical, Flag } from "lucide-react";
+import VerificationBadges from "@/components/VerificationBadges";
 import { useCompanion } from "@/hooks/use-companions";
 import { useStartConversation } from "@/hooks/use-chat";
 import { useTrackInteraction } from "@/hooks/use-recommendations";
