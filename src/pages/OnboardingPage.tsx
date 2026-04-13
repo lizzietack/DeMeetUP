@@ -214,6 +214,8 @@ const OnboardingPage = () => {
         display_name: displayName.trim(),
         bio: bio.trim(),
         location: location.trim(),
+        country: country || null,
+        currency: selectedCurrency?.currency || null,
         role,
         date_of_birth: dateOfBirth || null,
         avatar_url: profileImage?.url || null,
