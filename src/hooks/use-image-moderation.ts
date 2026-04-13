@@ -36,7 +36,12 @@ export const useUploadAndModerate = () => {
     }) => {
       if (!user) throw new Error("Not authenticated");
 
-      // 1. Upload to storage
+      // Ensure session is fresh before uploading
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        console.error("Session refresh failed:", refreshError);
+        throw new Error("Session expired. Please log in again.");
+      }
       const ext = file.name.split(".").pop() || "jpg";
       const path = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
 
