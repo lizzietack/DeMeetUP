@@ -26,6 +26,7 @@ import SettingsPage from "./pages/SettingsPage.tsx";
 import OnboardingPage from "./pages/OnboardingPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
 import BottomNav from "./components/BottomNav.tsx";
+import PWAInstallBanner from "./components/PWAInstallBanner.tsx";
 
 const queryClient = new QueryClient();
 
