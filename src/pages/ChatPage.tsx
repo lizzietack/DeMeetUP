@@ -19,6 +19,9 @@ import ReportUserModal from "@/components/ReportUserModal";
 import ImageLightbox from "@/components/chat/ImageLightbox";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import AudioMessage from "@/components/chat/AudioMessage";
+import { MessageReactions, QUICK_EMOJIS } from "@/components/chat/MessageReactions";
+import { useReactions, useToggleReaction } from "@/hooks/use-reactions";
+import { SmilePlus } from "lucide-react";
 
 const ChatPage = () => {
   const { id: conversationId } = useParams();
@@ -31,6 +34,7 @@ const ChatPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [isRecordingMode, setIsRecordingMode] = useState(false);
+  const [activeReactionMsgId, setActiveReactionMsgId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +45,8 @@ const ChatPage = () => {
   const isOtherTyping = useTypingIndicator(conversationId);
   const blockUser = useBlockUser();
   const { data: blockedUsers = [] } = useBlockedUsers();
+  const { data: reactionsMap = {} } = useReactions(conversationId);
+  const toggleReaction = useToggleReaction(conversationId);
 
   // Get conversation info (other user)
   const { data: convInfo } = useQuery({
