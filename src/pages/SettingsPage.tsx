@@ -270,4 +270,34 @@ const ToggleRow = ({
   </div>
 );
 
+const PushNotificationSection = () => {
+  const { isSupported, isSubscribed, loading, subscribe, unsubscribe } = usePushNotifications();
+
+  if (!isSupported) return null;
+
+  return (
+    <div className="glass rounded-xl overflow-hidden">
+      <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        Push Notifications
+      </h2>
+      <div className="flex items-center gap-3 px-4 py-3.5 border-t border-border/30">
+        <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+          <BellRing className="w-4 h-4 text-muted-foreground" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground">Push Alerts</p>
+          <p className="text-xs text-muted-foreground">
+            {isSubscribed ? "Get alerts even when the app is closed" : "Enable to receive alerts outside the app"}
+          </p>
+        </div>
+        <Switch
+          checked={isSubscribed}
+          disabled={loading}
+          onCheckedChange={(v) => (v ? subscribe() : unsubscribe())}
+        />
+      </div>
+    </div>
+  );
+};
+
 export default SettingsPage;
