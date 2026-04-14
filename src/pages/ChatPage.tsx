@@ -4,7 +4,7 @@ import {
   ArrowLeft, Send, Mic, Image, MoreVertical, Check, CheckCheck,
   DollarSign, Sparkles, ShieldBan, Flag,
 } from "lucide-react";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, ChangeEvent } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import {
