@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Bell, Lock, LogOut, Moon, Globe, Eye, EyeOff, X, Check } from "lucide-react";
+import { ArrowLeft, Bell, BellRing, Lock, LogOut, Moon, Globe, Eye, EyeOff, X, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 const useLocalToggle = (key: string, defaultValue = true) => {
   const [value, setValue] = useState(() => {
@@ -93,10 +94,13 @@ const SettingsPage = () => {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-lg mx-auto px-4 pt-6 space-y-5"
       >
+        {/* Push Notifications */}
+        <PushNotificationSection />
+
         {/* Notifications */}
         <div className="glass rounded-xl overflow-hidden">
           <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Notifications
+            In-App Notifications
           </h2>
           <ToggleRow icon={Bell} label="Messages" description="New chat messages" checked={msgNotif} onCheckedChange={setMsgNotif} />
           <ToggleRow icon={Bell} label="Bookings" description="Booking updates & requests" checked={bookingNotif} onCheckedChange={setBookingNotif} />
