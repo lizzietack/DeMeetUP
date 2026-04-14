@@ -11,7 +11,6 @@ import {
   useMessages, useSendMessage, usePresence, useTypingIndicator,
 } from "@/hooks/use-chat";
 import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from "crypto";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import TipModal from "@/components/TipModal";
