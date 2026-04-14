@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, BarChart3, Image, Users, AlertTriangle, Shield, TrendingUp } from "lucide-react";
+import { ArrowLeft, BarChart3, Image, Users, AlertTriangle, Shield, TrendingUp, CalendarCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AdminStatsOverview from "@/components/admin/AdminStatsOverview";
@@ -8,11 +8,14 @@ import AdminImageReview from "@/components/admin/AdminImageReview";
 import AdminUserManagement from "@/components/admin/AdminUserManagement";
 import AdminReportsPanel from "@/components/admin/AdminReportsPanel";
 import AdminAnalyticsCharts from "@/components/admin/AdminAnalyticsCharts";
+import AdminBookingsPanel from "@/components/admin/AdminBookingsPanel";
+import AdminNotifications from "@/components/admin/AdminNotifications";
 
 const TABS = [
   { id: "overview", label: "Overview", icon: BarChart3 },
   { id: "analytics", label: "Analytics", icon: TrendingUp },
   { id: "users", label: "Companions", icon: Users },
+  { id: "bookings", label: "Bookings", icon: CalendarCheck },
   { id: "images", label: "Images", icon: Image },
   { id: "reports", label: "Reports", icon: AlertTriangle },
 ] as const;
@@ -59,7 +62,8 @@ const AdminPage = () => {
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <Shield className="w-5 h-5 text-primary" />
-          <h1 className="font-display text-lg font-bold text-foreground">Admin Dashboard</h1>
+          <h1 className="font-display text-lg font-bold text-foreground flex-1">Admin Dashboard</h1>
+          <AdminNotifications />
         </div>
       </header>
 
@@ -97,6 +101,7 @@ const AdminPage = () => {
         )}
         {tab === "analytics" && <AdminAnalyticsCharts />}
         {tab === "users" && <AdminUserManagement />}
+        {tab === "bookings" && <AdminBookingsPanel />}
         {tab === "images" && <AdminImageReview />}
         {tab === "reports" && <AdminReportsPanel />}
       </div>
