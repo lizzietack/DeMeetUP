@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Bell, BellRing, Lock, LogOut, Moon, Globe, Eye, EyeOff, X, Check } from "lucide-react";
+import { ArrowLeft, Bell, BellRing, Lock, LogOut, Moon, Globe, Eye, EyeOff, X, Check, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -26,11 +26,6 @@ const useLocalToggle = (key: string, defaultValue = true) => {
 const SettingsPage = () => {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
-
-  // Notification toggles
-  const [msgNotif, setMsgNotif] = useLocalToggle("notif_messages", true);
-  const [bookingNotif, setBookingNotif] = useLocalToggle("notif_bookings", true);
-  const [updateNotif, setUpdateNotif] = useLocalToggle("notif_updates", false);
 
   // Theme toggle (dark is default/only for now)
   const [darkMode, setDarkMode] = useLocalToggle("theme_dark", true);
@@ -97,14 +92,24 @@ const SettingsPage = () => {
         {/* Push Notifications */}
         <PushNotificationSection />
 
-        {/* Notifications */}
+        {/* Notification Preferences Link */}
         <div className="glass rounded-xl overflow-hidden">
           <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            In-App Notifications
+            Notifications
           </h2>
-          <ToggleRow icon={Bell} label="Messages" description="New chat messages" checked={msgNotif} onCheckedChange={setMsgNotif} />
-          <ToggleRow icon={Bell} label="Bookings" description="Booking updates & requests" checked={bookingNotif} onCheckedChange={setBookingNotif} />
-          <ToggleRow icon={Bell} label="App Updates" description="New features & announcements" checked={updateNotif} onCheckedChange={setUpdateNotif} />
+          <button
+            onClick={() => navigate("/notification-preferences")}
+            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/50 transition-colors text-left border-t border-border/30"
+          >
+            <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+              <Bell className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Notification Preferences</p>
+              <p className="text-xs text-muted-foreground">Choose which alerts you receive</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </button>
         </div>
 
         {/* Password & Security */}

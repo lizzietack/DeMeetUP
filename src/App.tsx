@@ -25,6 +25,7 @@ import SafetyPrivacyPage from "./pages/SafetyPrivacyPage.tsx";
 import SettingsPage from "./pages/SettingsPage.tsx";
 import OnboardingPage from "./pages/OnboardingPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
+import NotificationPreferencesPage from "./pages/NotificationPreferencesPage.tsx";
 import BottomNav from "./components/BottomNav.tsx";
 import PWAInstallBanner from "./components/PWAInstallBanner.tsx";
 
@@ -50,7 +51,7 @@ const AppContent = () => {
   const { user } = useAuth();
   const hideNav = location.pathname.startsWith("/chat/") ||
     location.pathname.startsWith("/book/") ||
-    ["/login", "/register", "/select-role", "/companion-setup", "/forgot-password", "/reset-password", "/profile", "/saved-companions", "/safety-privacy", "/settings", "/onboarding", "/admin"].includes(location.pathname);
+    ["/login", "/register", "/select-role", "/companion-setup", "/forgot-password", "/reset-password", "/profile", "/saved-companions", "/safety-privacy", "/settings", "/notification-preferences", "/onboarding", "/admin"].includes(location.pathname);
 
   return (
     <>
@@ -76,6 +77,7 @@ const AppContent = () => {
         <Route path="/saved-companions" element={<OnboardingGuard><SavedCompanionsPage /></OnboardingGuard>} />
         <Route path="/safety-privacy" element={<OnboardingGuard><SafetyPrivacyPage /></OnboardingGuard>} />
         <Route path="/settings" element={<OnboardingGuard><SettingsPage /></OnboardingGuard>} />
+        <Route path="/notification-preferences" element={<OnboardingGuard><NotificationPreferencesPage /></OnboardingGuard>} />
         <Route path="/admin" element={<OnboardingGuard><AdminPage /></OnboardingGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
