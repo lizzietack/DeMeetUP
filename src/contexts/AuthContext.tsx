@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -70,6 +70,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setProfile(null);
         }
         setLoading(false);
+
+        // If token refresh failed, try to recover the session
+        if (event === "TOKEN_REFRESHED" && !session) {
+          const { data } = await supabase.auth.getSession();
+          if (data.session) {
+            setSession(data.session);
+            setUser(data.session.user);
+            fetchProfile(data.session.user.id);
+          }
+        }
       }
     );
 
@@ -82,7 +92,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Re-validate session when tab becomes visible again
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        supabase.auth.getSession().then(({ data: { session: freshSession } }) => {
+          if (freshSession) {
+            setSession(freshSession);
+            setUser(freshSession.user);
+          }
+        });
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
