@@ -17,11 +17,7 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if already authenticated
-  if (!loading && user) {
-    navigate("/select-role", { replace: true });
-    return null;
-  }
+  // GuestOnlyRoute handles redirect if already authenticated
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
