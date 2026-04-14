@@ -112,7 +112,13 @@ const CompanionProfilePage = () => {
             }} className="w-10 h-10 glass rounded-full flex items-center justify-center">
               <Heart className={`w-5 h-5 ${isSaved ? "fill-destructive text-destructive" : "text-foreground"}`} />
             </button>
-            <button className="w-10 h-10 glass rounded-full flex items-center justify-center">
+            <button
+              onClick={() => {
+                navigator.clipboard?.writeText(window.location.href);
+                toast.success("Link copied to clipboard!");
+              }}
+              className="w-10 h-10 glass rounded-full flex items-center justify-center"
+            >
               <Share2 className="w-5 h-5 text-foreground" />
             </button>
             <div className="relative">

@@ -143,7 +143,7 @@ const BookingPage = () => {
 
           <div className="space-y-3">
             <button
-              onClick={() => navigate(`/chat/${companion.id}`)}
+              onClick={() => navigate("/chat")}
               className="w-full bg-secondary text-foreground font-display font-semibold py-3 rounded-xl
                          flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors"
             >
