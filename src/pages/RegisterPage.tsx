@@ -31,8 +31,8 @@ const RegisterPage = () => {
     if (error) {
       toast({ title: "Registration failed", description: error.message, variant: "destructive" });
     } else {
-      navigate("/select-role");
-      toast({ title: "Account created!", description: "Choose your role to get started." });
+      navigate("/onboarding", { replace: true });
+      toast({ title: "Account created!", description: "Complete your profile to get started." });
     }
   };
 
