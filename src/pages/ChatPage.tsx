@@ -246,7 +246,10 @@ const ChatPage = () => {
       {/* Input */}
       <div className="glass-strong border-t border-border/50 px-4 py-3 flex-shrink-0">
         <div className="max-w-lg mx-auto flex items-center gap-2">
-          <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors">
+          <button
+            onClick={() => toast.info("Image sharing coming soon!")}
+            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
+          >
             <Image className="w-5 h-5 text-muted-foreground" />
           </button>
           <div className="flex-1 relative">
@@ -265,7 +268,10 @@ const ChatPage = () => {
               <Send className="w-4 h-4 text-primary-foreground" />
             </button>
           ) : (
-            <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors">
+            <button
+              onClick={() => toast.info("Voice notes coming soon!")}
+              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
+            >
               <Mic className="w-5 h-5 text-muted-foreground" />
             </button>
           )}
