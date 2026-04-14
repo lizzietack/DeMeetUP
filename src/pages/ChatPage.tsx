@@ -4,7 +4,7 @@ import {
   ArrowLeft, Send, Mic, Image, MoreVertical, Check, CheckCheck,
   DollarSign, Sparkles, ShieldBan, Flag,
 } from "lucide-react";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, ChangeEvent } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -25,8 +25,10 @@ const ChatPage = () => {
   const [showTipModal, setShowTipModal] = useState(false);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: messages = [], isLoading } = useMessages(conversationId);
   const sendMessage = useSendMessage();
@@ -107,6 +109,48 @@ const ChatPage = () => {
       messageType: "tip",
       metadata: { amount },
     });
+  };
+
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !conversationId || !user) return;
+
+    // Validate file
+    if (!file.type.startsWith("image/")) {
+      toast.error("Only image files are allowed");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("chat-images")
+        .upload(path, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("chat-images")
+        .getPublicUrl(path);
+
+      sendMessage.mutate({
+        conversationId,
+        content: urlData.publicUrl,
+        messageType: "image",
+        metadata: { fileName: file.name, fileSize: file.size },
+      });
+    } catch {
+      toast.error("Failed to upload image");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const StatusIcon = ({ msg }: { msg: { senderId: string; readAt: string | null } }) => {
@@ -210,7 +254,18 @@ const ChatPage = () => {
                       <span className="text-xs font-semibold">Tip</span>
                     </div>
                   )}
-                  <p className="text-sm leading-relaxed">{msg.content}</p>
+                  {msg.messageType === "image" ? (
+                    <a href={msg.content} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={msg.content}
+                        alt="Shared image"
+                        className="rounded-lg max-w-full max-h-60 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                        loading="lazy"
+                      />
+                    </a>
+                  ) : (
+                    <p className="text-sm leading-relaxed">{msg.content}</p>
+                  )}
                   <div className={`flex items-center gap-1 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
                     <span className={`text-[10px] ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                       {new Date(msg.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
@@ -246,11 +301,23 @@ const ChatPage = () => {
       {/* Input */}
       <div className="glass-strong border-t border-border/50 px-4 py-3 flex-shrink-0">
         <div className="max-w-lg mx-auto flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageUpload}
+          />
           <button
-            onClick={() => toast.info("Image sharing coming soon!")}
-            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-50"
           >
-            <Image className="w-5 h-5 text-muted-foreground" />
+            {isUploading ? (
+              <div className="w-5 h-5 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Image className="w-5 h-5 text-muted-foreground" />
+            )}
           </button>
           <div className="flex-1 relative">
             <input
