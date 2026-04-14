@@ -23,12 +23,31 @@ export function useRecommendations() {
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // cache 5 min
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("recommendations", {
-        body: {},
-      });
+      // Ensure we have a fresh session before calling the edge function
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("Not authenticated");
+      }
 
-      if (error) throw error;
-      return data as RecommendationResult;
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recommendations`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({}),
+        }
+      );
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData?.error || `Failed with status ${response.status}`);
+      }
+
+      return (await response.json()) as RecommendationResult;
     },
   });
 }
