@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Bell, Lock, LogOut, Moon, Globe, Eye, EyeOff, X, Check } from "lucide-react";
+import { ArrowLeft, Bell, BellRing, Lock, LogOut, Moon, Globe, Eye, EyeOff, X, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 const useLocalToggle = (key: string, defaultValue = true) => {
   const [value, setValue] = useState(() => {
@@ -93,10 +94,13 @@ const SettingsPage = () => {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-lg mx-auto px-4 pt-6 space-y-5"
       >
+        {/* Push Notifications */}
+        <PushNotificationSection />
+
         {/* Notifications */}
         <div className="glass rounded-xl overflow-hidden">
           <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Notifications
+            In-App Notifications
           </h2>
           <ToggleRow icon={Bell} label="Messages" description="New chat messages" checked={msgNotif} onCheckedChange={setMsgNotif} />
           <ToggleRow icon={Bell} label="Bookings" description="Booking updates & requests" checked={bookingNotif} onCheckedChange={setBookingNotif} />
@@ -265,5 +269,35 @@ const ToggleRow = ({
     <Switch checked={checked} onCheckedChange={onCheckedChange} />
   </div>
 );
+
+const PushNotificationSection = () => {
+  const { isSupported, isSubscribed, loading, subscribe, unsubscribe } = usePushNotifications();
+
+  if (!isSupported) return null;
+
+  return (
+    <div className="glass rounded-xl overflow-hidden">
+      <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        Push Notifications
+      </h2>
+      <div className="flex items-center gap-3 px-4 py-3.5 border-t border-border/30">
+        <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+          <BellRing className="w-4 h-4 text-muted-foreground" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground">Push Alerts</p>
+          <p className="text-xs text-muted-foreground">
+            {isSubscribed ? "Get alerts even when the app is closed" : "Enable to receive alerts outside the app"}
+          </p>
+        </div>
+        <Switch
+          checked={isSubscribed}
+          disabled={loading}
+          onCheckedChange={(v) => (v ? subscribe() : unsubscribe())}
+        />
+      </div>
+    </div>
+  );
+};
 
 export default SettingsPage;
