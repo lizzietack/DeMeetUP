@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Send, Mic, Image, MoreVertical, Check, CheckCheck,
-  DollarSign, Sparkles, ShieldBan, Flag,
+  ArrowLeft, Send, Image, MoreVertical, Check, CheckCheck,
+  DollarSign, Sparkles, ShieldBan, Flag, Mic,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, ChangeEvent } from "react";
 import { toast } from "sonner";
@@ -16,6 +16,9 @@ import { formatDistanceToNow } from "date-fns";
 import TipModal from "@/components/TipModal";
 import { useBlockUser, useBlockedUsers } from "@/hooks/use-blocked-users";
 import ReportUserModal from "@/components/ReportUserModal";
+import ImageLightbox from "@/components/chat/ImageLightbox";
+import VoiceRecorder from "@/components/chat/VoiceRecorder";
+import AudioMessage from "@/components/chat/AudioMessage";
 
 const ChatPage = () => {
   const { id: conversationId } = useParams();
@@ -26,6 +29,8 @@ const ChatPage = () => {
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [isRecordingMode, setIsRecordingMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -36,7 +41,6 @@ const ChatPage = () => {
   const isOtherTyping = useTypingIndicator(conversationId);
   const blockUser = useBlockUser();
   const { data: blockedUsers = [] } = useBlockedUsers();
-
 
   // Get conversation info (other user)
   const { data: convInfo } = useQuery({
@@ -85,7 +89,6 @@ const ChatPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isOtherTyping]);
 
-  // Handle typing indicator
   const handleTyping = useCallback(() => {
     if (!conversationId) return;
     setTyping(conversationId);
@@ -115,7 +118,6 @@ const ChatPage = () => {
     const file = e.target.files?.[0];
     if (!file || !conversationId || !user) return;
 
-    // Validate file
     if (!file.type.startsWith("image/")) {
       toast.error("Only image files are allowed");
       return;
@@ -150,6 +152,35 @@ const ChatPage = () => {
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSendVoiceNote = async (blob: Blob, durationSec: number) => {
+    if (!conversationId || !user) return;
+    setIsUploading(true);
+    try {
+      const path = `${user.id}/${Date.now()}.webm`;
+      const { error: uploadError } = await supabase.storage
+        .from("voice-notes")
+        .upload(path, blob);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("voice-notes")
+        .getPublicUrl(path);
+
+      sendMessage.mutate({
+        conversationId,
+        content: urlData.publicUrl,
+        messageType: "voice",
+        metadata: { duration: durationSec },
+      });
+    } catch {
+      toast.error("Failed to send voice note");
+    } finally {
+      setIsUploading(false);
+      setIsRecordingMode(false);
     }
   };
 
@@ -232,6 +263,8 @@ const ChatPage = () => {
           messages.map((msg, i) => {
             const isMe = msg.senderId === user?.id;
             const isTip = msg.messageType === "tip";
+            const isImage = msg.messageType === "image";
+            const isVoice = msg.messageType === "voice";
 
             return (
               <motion.div
@@ -254,17 +287,29 @@ const ChatPage = () => {
                       <span className="text-xs font-semibold">Tip</span>
                     </div>
                   )}
-                  {msg.messageType === "image" ? (
-                    <a href={msg.content} target="_blank" rel="noopener noreferrer">
+                  {isImage ? (
+                    <button onClick={() => setLightboxSrc(msg.content)} className="block">
                       <img
                         src={msg.content}
                         alt="Shared image"
                         className="rounded-lg max-w-full max-h-60 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                         loading="lazy"
                       />
-                    </a>
+                    </button>
+                  ) : isVoice ? (
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <Mic className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="text-xs font-semibold">Voice Note</span>
+                    </div>
                   ) : (
                     <p className="text-sm leading-relaxed">{msg.content}</p>
+                  )}
+                  {isVoice && (
+                    <AudioMessage
+                      src={msg.content}
+                      duration={msg.metadata?.duration}
+                      isMe={isMe}
+                    />
                   )}
                   <div className={`flex items-center gap-1 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
                     <span className={`text-[10px] ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
@@ -300,50 +345,62 @@ const ChatPage = () => {
 
       {/* Input */}
       <div className="glass-strong border-t border-border/50 px-4 py-3 flex-shrink-0">
-        <div className="max-w-lg mx-auto flex items-center gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleImageUpload}
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-50"
-          >
-            {isUploading ? (
-              <div className="w-5 h-5 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Image className="w-5 h-5 text-muted-foreground" />
-            )}
-          </button>
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              placeholder="Type a message..."
-              value={message}
-              onChange={(e) => { setMessage(e.target.value); handleTyping(); }}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              className="w-full bg-secondary rounded-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground
-                         focus:outline-none focus:ring-1 focus:ring-gold/50"
+        <div className="max-w-lg mx-auto">
+          {isRecordingMode ? (
+            <VoiceRecorder
+              onSend={handleSendVoiceNote}
+              disabled={isUploading}
             />
-          </div>
-          {message.trim() ? (
-            <button onClick={handleSend} className="w-9 h-9 rounded-full gradient-gold flex items-center justify-center glow-gold">
-              <Send className="w-4 h-4 text-primary-foreground" />
-            </button>
           ) : (
-            <button
-              onClick={() => toast.info("Voice notes coming soon!")}
-              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
-            >
-              <Mic className="w-5 h-5 text-muted-foreground" />
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-50"
+              >
+                {isUploading ? (
+                  <div className="w-5 h-5 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Image className="w-5 h-5 text-muted-foreground" />
+                )}
+              </button>
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder="Type a message..."
+                  value={message}
+                  onChange={(e) => { setMessage(e.target.value); handleTyping(); }}
+                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                  className="w-full bg-secondary rounded-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground
+                             focus:outline-none focus:ring-1 focus:ring-gold/50"
+                />
+              </div>
+              {message.trim() ? (
+                <button onClick={handleSend} className="w-9 h-9 rounded-full gradient-gold flex items-center justify-center glow-gold">
+                  <Send className="w-4 h-4 text-primary-foreground" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsRecordingMode(true)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
+                >
+                  <Mic className="w-5 h-5 text-muted-foreground" />
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
+
+      {/* Lightbox */}
+      <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
 
       {/* Tip Modal */}
       <TipModal
