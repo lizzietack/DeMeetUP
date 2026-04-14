@@ -67,10 +67,10 @@ const AppContent = () => {
       <Sonner />
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={<GuestOnlyRoute><LoginPage /></GuestOnlyRoute>} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register" element={<GuestOnlyRoute><RegisterPage /></GuestOnlyRoute>} />
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
         <Route path="/select-role" element={<ProtectedRoute><SelectRolePage /></ProtectedRoute>} />
         <Route path="/companion-setup" element={<ProtectedRoute><CompanionSetupPage /></ProtectedRoute>} />
