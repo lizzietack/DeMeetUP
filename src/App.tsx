@@ -80,6 +80,7 @@ const AppContent = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!hideNav && <BottomNav />}
+      <PWAInstallBanner />
     </>
   );
 };
