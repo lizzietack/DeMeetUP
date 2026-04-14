@@ -2,12 +2,14 @@ import { motion } from "framer-motion";
 import { ArrowRight, Crown, TrendingUp, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import CompanionCard from "@/components/CompanionCard";
-import { companions } from "@/data/mock";
+import { useCompanions } from "@/hooks/use-companions";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const { data: companions = [], isLoading } = useCompanions();
   const featured = companions.filter((c) => c.featured);
-  const trending = companions.filter((c) => c.online);
+  const online = companions.slice(0, 6);
 
   return (
     <div className="min-h-screen pb-20">
@@ -65,11 +67,29 @@ const HomePage = () => {
               See all <ArrowRight className="w-3 h-3" />
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {featured.map((c, i) => (
-              <CompanionCard key={c.id} companion={c} index={i} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-2 gap-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="glass rounded-2xl overflow-hidden">
+                  <Skeleton className="aspect-[3/4] w-full" />
+                  <div className="p-3 space-y-2">
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : featured.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3">
+              {featured.map((c, i) => (
+                <CompanionCard key={c.id} companion={c} index={i} />
+              ))}
+            </div>
+          ) : (
+            <div className="glass rounded-xl p-6 text-center">
+              <p className="text-sm text-muted-foreground">No featured companions yet. Check back soon!</p>
+            </div>
+          )}
         </section>
 
         {/* Trending */}
@@ -80,11 +100,29 @@ const HomePage = () => {
               <h2 className="font-display text-lg font-semibold text-foreground">Online Now</h2>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {trending.map((c, i) => (
-              <CompanionCard key={c.id} companion={c} index={i} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-2 gap-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="glass rounded-2xl overflow-hidden">
+                  <Skeleton className="aspect-[3/4] w-full" />
+                  <div className="p-3 space-y-2">
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : online.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3">
+              {online.map((c, i) => (
+                <CompanionCard key={c.id} companion={c} index={i} />
+              ))}
+            </div>
+          ) : (
+            <div className="glass rounded-xl p-6 text-center">
+              <p className="text-sm text-muted-foreground">No companions available right now.</p>
+            </div>
+          )}
         </section>
       </div>
     </div>
