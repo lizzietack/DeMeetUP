@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCallback } from "react";
+import { callEdgeFunction } from "@/lib/edge-function";
 
 interface BecauseYouViewed {
   viewedId: string;
@@ -23,31 +24,9 @@ export function useRecommendations() {
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // cache 5 min
     queryFn: async () => {
-      // Ensure we have a fresh session before calling the edge function
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error("Not authenticated");
-      }
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recommendations`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({}),
-        }
-      );
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData?.error || `Failed with status ${response.status}`);
-      }
-
-      return (await response.json()) as RecommendationResult;
+      return callEdgeFunction<RecommendationResult>("recommendations", {
+        body: {},
+      });
     },
   });
 }
