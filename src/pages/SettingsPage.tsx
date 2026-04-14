@@ -27,11 +27,6 @@ const SettingsPage = () => {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
 
-  // Notification toggles
-  const [msgNotif, setMsgNotif] = useLocalToggle("notif_messages", true);
-  const [bookingNotif, setBookingNotif] = useLocalToggle("notif_bookings", true);
-  const [updateNotif, setUpdateNotif] = useLocalToggle("notif_updates", false);
-
   // Theme toggle (dark is default/only for now)
   const [darkMode, setDarkMode] = useLocalToggle("theme_dark", true);
 
