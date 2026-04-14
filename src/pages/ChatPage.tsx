@@ -192,7 +192,16 @@ const ChatPage = () => {
 
   const StatusIcon = ({ msg }: { msg: { senderId: string; readAt: string | null } }) => {
     if (msg.senderId !== user?.id) return null;
-    if (msg.readAt) return <CheckCheck className="w-3 h-3 text-gold" />;
+    if (msg.readAt) {
+      return (
+        <span className="inline-flex items-center gap-0.5 group/read relative">
+          <CheckCheck className="w-3 h-3 text-gold" />
+          <span className="absolute bottom-full right-0 mb-1 hidden group-hover/read:block whitespace-nowrap text-[9px] bg-popover text-popover-foreground px-2 py-1 rounded-lg shadow-lg border border-border/50">
+            Read {new Date(msg.readAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+          </span>
+        </span>
+      );
+    }
     return <Check className="w-3 h-3 text-muted-foreground" />;
   };
 
@@ -278,51 +287,99 @@ const ChatPage = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(i * 0.03, 0.5) }}
-                className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                className={`flex ${isMe ? "justify-end" : "justify-start"} group/msg`}
               >
-                <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl ${
-                  isTip
-                    ? "gradient-gold text-primary-foreground rounded-br-sm glow-gold"
-                    : isMe
-                      ? "gradient-gold text-primary-foreground rounded-br-sm"
-                      : "glass rounded-bl-sm"
-                }`}>
-                  {isTip && (
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span className="text-xs font-semibold">Tip</span>
-                    </div>
-                  )}
-                  {isImage ? (
-                    <button onClick={() => setLightboxSrc(msg.content)} className="block">
-                      <img
+                <div className="relative max-w-[75%]">
+                  {/* Reaction trigger on hover */}
+                  <button
+                    onClick={() => setActiveReactionMsgId(activeReactionMsgId === msg.id ? null : msg.id)}
+                    className={`absolute top-1 ${isMe ? "-left-8" : "-right-8"} w-6 h-6 rounded-full bg-secondary/80 border border-border/30 items-center justify-center opacity-0 group-hover/msg:opacity-100 transition-opacity hidden sm:flex`}
+                  >
+                    <SmilePlus className="w-3 h-3 text-muted-foreground" />
+                  </button>
+
+                  <div
+                    className={`px-4 py-2.5 rounded-2xl ${
+                      isTip
+                        ? "gradient-gold text-primary-foreground rounded-br-sm glow-gold"
+                        : isMe
+                          ? "gradient-gold text-primary-foreground rounded-br-sm"
+                          : "glass rounded-bl-sm"
+                    }`}
+                    onDoubleClick={() => setActiveReactionMsgId(activeReactionMsgId === msg.id ? null : msg.id)}
+                  >
+                    {isTip && (
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span className="text-xs font-semibold">Tip</span>
+                      </div>
+                    )}
+                    {isImage ? (
+                      <button onClick={() => setLightboxSrc(msg.content)} className="block">
+                        <img
+                          src={msg.content}
+                          alt="Shared image"
+                          className="rounded-lg max-w-full max-h-60 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          loading="lazy"
+                        />
+                      </button>
+                    ) : isVoice ? (
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <Mic className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="text-xs font-semibold">Voice Note</span>
+                      </div>
+                    ) : (
+                      <p className="text-sm leading-relaxed">{msg.content}</p>
+                    )}
+                    {isVoice && (
+                      <AudioMessage
                         src={msg.content}
-                        alt="Shared image"
-                        className="rounded-lg max-w-full max-h-60 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                        loading="lazy"
+                        duration={msg.metadata?.duration}
+                        isMe={isMe}
                       />
-                    </button>
-                  ) : isVoice ? (
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <Mic className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span className="text-xs font-semibold">Voice Note</span>
+                    )}
+                    <div className={`flex items-center gap-1 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
+                      <span className={`text-[10px] ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                      </span>
+                      <StatusIcon msg={msg} />
                     </div>
-                  ) : (
-                    <p className="text-sm leading-relaxed">{msg.content}</p>
-                  )}
-                  {isVoice && (
-                    <AudioMessage
-                      src={msg.content}
-                      duration={msg.metadata?.duration}
+                  </div>
+
+                  {/* Quick emoji picker */}
+                  <AnimatePresence>
+                    {activeReactionMsgId === msg.id && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 4 }}
+                        className={`absolute z-50 ${isMe ? "right-0" : "left-0"} -top-10 glass-strong rounded-xl px-2 py-1.5 flex gap-1`}
+                      >
+                        {QUICK_EMOJIS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            onClick={() => {
+                              toggleReaction.mutate({ messageId: msg.id, emoji });
+                              setActiveReactionMsgId(null);
+                            }}
+                            className="w-8 h-8 rounded-lg hover:bg-secondary/80 flex items-center justify-center text-lg transition-colors"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Reactions display */}
+                  {reactionsMap[msg.id]?.length > 0 && (
+                    <MessageReactions
+                      reactions={reactionsMap[msg.id]}
+                      currentUserId={user?.id || ""}
+                      onToggle={(emoji) => toggleReaction.mutate({ messageId: msg.id, emoji })}
                       isMe={isMe}
                     />
                   )}
-                  <div className={`flex items-center gap-1 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
-                    <span className={`text-[10px] ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                    </span>
-                    <StatusIcon msg={msg} />
-                  </div>
                 </div>
               </motion.div>
             );
