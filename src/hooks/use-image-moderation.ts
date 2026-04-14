@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { callEdgeFunction } from "@/lib/edge-function";
 
 export const useImageModeration = () => {
   const { user } = useAuth();
@@ -68,35 +69,27 @@ export const useUploadAndModerate = () => {
 
       if (modError) throw modError;
 
-      // 3. Call moderation edge function (fire and forget for UX, but await for result)
+      // 3. Call moderation edge function with retry
       try {
-        const { data: session } = await supabase.auth.getSession();
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/moderate-image`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.session?.access_token}`,
-            },
-            body: JSON.stringify({
-              image_url: imageUrl,
-              image_type: imageType,
-              moderation_id: modRecord.id,
-            }),
-          }
-        );
+        const result = await callEdgeFunction<{
+          status: string;
+          analysis: any;
+          rejection_reason: string | null;
+        }>("moderate-image", {
+          body: {
+            image_url: imageUrl,
+            image_type: imageType,
+            moderation_id: modRecord.id,
+          },
+        });
 
-        if (response.ok) {
-          const result = await response.json();
-          return {
-            imageUrl,
-            moderationId: modRecord.id,
-            status: result.status,
-            analysis: result.analysis,
-            rejectionReason: result.rejection_reason,
-          };
-        }
+        return {
+          imageUrl,
+          moderationId: modRecord.id,
+          status: result.status,
+          analysis: result.analysis,
+          rejectionReason: result.rejection_reason,
+        };
       } catch (e) {
         console.error("Moderation call failed:", e);
       }
@@ -172,21 +165,12 @@ export const useAdminUpdateImage = () => {
       // Apply watermark to approved images
       if (status === "approved" && imageRecord?.image_url) {
         try {
-          const { data: session } = await supabase.auth.getSession();
-          await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/watermark-image`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${session.session?.access_token}`,
-              },
-              body: JSON.stringify({
-                image_url: imageRecord.image_url,
-                moderation_id: moderationId,
-              }),
-            }
-          );
+          await callEdgeFunction("watermark-image", {
+            body: {
+              image_url: imageRecord.image_url,
+              moderation_id: moderationId,
+            },
+          });
         } catch (e) {
           console.error("Watermark call failed:", e);
         }
