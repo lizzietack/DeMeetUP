@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X, ArrowUpDown, ChevronDown, Globe } from "lucide-react";
 import CompanionCard from "@/components/CompanionCard";
