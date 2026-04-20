@@ -60,10 +60,11 @@ const HorizontalSection = ({
   );
 };
 
-type SortOption = "newest" | "price_low" | "price_high" | "rating";
+type SortOption = "newest" | "price_low" | "price_high" | "rating" | "closest";
 
 const SORT_LABELS: Record<SortOption, string> = {
   newest: "Newest First",
+  closest: "Closest to Me",
   price_low: "Price: Low → High",
   price_high: "Price: High → Low",
   rating: "Top Rated",
