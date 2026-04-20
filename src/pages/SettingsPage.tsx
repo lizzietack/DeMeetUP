@@ -10,15 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { storage } from "@/platform/storage";
 
 const useLocalToggle = (key: string, defaultValue = true) => {
   const [value, setValue] = useState(() => {
-    const stored = localStorage.getItem(key);
+    const stored = storage.getSync(key);
     return stored !== null ? stored === "true" : defaultValue;
   });
   const toggle = (v: boolean) => {
     setValue(v);
-    localStorage.setItem(key, String(v));
+    void storage.set(key, String(v));
   };
   return [value, toggle] as const;
 };

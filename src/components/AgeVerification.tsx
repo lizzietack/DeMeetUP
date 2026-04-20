@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck } from "lucide-react";
+import { storage } from "@/platform/storage";
 
 interface AgeVerificationProps {
   onVerified: () => void;
@@ -11,10 +12,8 @@ const AgeVerification = ({ onVerified }: AgeVerificationProps) => {
 
   const handleConfirm = () => {
     setExiting(true);
-    setTimeout(() => {
-      localStorage.setItem("vc_age_verified", "true");
-      onVerified();
-    }, 600);
+    void storage.set("vc_age_verified", "true");
+    setTimeout(onVerified, 600);
   };
 
   return (

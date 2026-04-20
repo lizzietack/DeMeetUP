@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { storage } from "@/platform/storage";
 
 interface NotifPrefs {
   messages: boolean;
@@ -31,7 +32,7 @@ const STORAGE_KEY = "notification_preferences";
 
 const loadPrefs = (): NotifPrefs => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = storage.getSync(STORAGE_KEY);
     return stored ? { ...DEFAULT_PREFS, ...JSON.parse(stored) } : DEFAULT_PREFS;
   } catch {
     return DEFAULT_PREFS;
@@ -51,7 +52,7 @@ const NotificationPreferencesPage = () => {
 
   const handleSave = () => {
     setSaving(true);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+    void storage.set(STORAGE_KEY, JSON.stringify(prefs));
     setTimeout(() => {
       setSaving(false);
       toast.success("Notification preferences saved");
