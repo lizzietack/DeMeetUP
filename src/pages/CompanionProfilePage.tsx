@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, BadgeCheck, Star, MapPin, Heart, Share2, MessageCircle, Calendar, DollarSign, ShieldBan, MoreVertical, Flag } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Star, MapPin, Heart, Share2, MessageCircle, Calendar, DollarSign, ShieldBan, MoreVertical, Flag, User, Sparkles, Cake } from "lucide-react";
 import VerificationBadges from "@/components/VerificationBadges";
 import { useCompanion } from "@/hooks/use-companions";
 import { useStartConversation } from "@/hooks/use-chat";
@@ -194,6 +194,30 @@ const CompanionProfilePage = () => {
                   compact
                 />
               </div>
+
+              {/* Attribute badges */}
+              {(companion.age > 0 || companion.bodyType || companion.ethnicity) && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {companion.age > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-gold/10 text-gold border border-gold/20 font-medium">
+                      <Cake className="w-3 h-3" />
+                      {companion.age} yrs
+                    </span>
+                  )}
+                  {companion.bodyType && (
+                    <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-accent/10 text-accent border border-accent/20 font-medium">
+                      <User className="w-3 h-3" />
+                      {companion.bodyType}
+                    </span>
+                  )}
+                  {companion.ethnicity && (
+                    <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">
+                      <Sparkles className="w-3 h-3" />
+                      {companion.ethnicity}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             {companion.rating > 0 && (
               <div className="flex items-center gap-1">
