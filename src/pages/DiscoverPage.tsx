@@ -82,8 +82,10 @@ const DiscoverPage = () => {
   const [selectedGender, setSelectedGender] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState("");
   const [countryFilter, setCountryFilter] = useState("");
-  const [bodyTypeFilter, setBodyTypeFilter] = useState("");
-  const [ethnicityFilter, setEthnicityFilter] = useState("");
+  const [bodyTypeFilters, setBodyTypeFilters] = useState<string[]>([]);
+  const [ethnicityFilters, setEthnicityFilters] = useState<string[]>([]);
+  const [ageMin, setAgeMin] = useState(18);
+  const [ageMax, setAgeMax] = useState(65);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -116,8 +118,9 @@ const DiscoverPage = () => {
       if (selectedGender !== "all" && c.gender !== selectedGender) return false;
       if (locationFilter && !c.location.toLowerCase().includes(locationFilter.toLowerCase())) return false;
       if (countryFilter && (cAny.country || "") !== countryFilter) return false;
-      if (bodyTypeFilter && (cAny.bodyType || "") !== bodyTypeFilter) return false;
-      if (ethnicityFilter && (cAny.ethnicity || "") !== ethnicityFilter) return false;
+      if (bodyTypeFilters.length > 0 && !bodyTypeFilters.includes(cAny.bodyType || "")) return false;
+      if (ethnicityFilters.length > 0 && !ethnicityFilters.includes(cAny.ethnicity || "")) return false;
+      if (c.age > 0 && (c.age < ageMin || c.age > ageMax)) return false;
       return true;
     });
 
@@ -138,12 +141,12 @@ const DiscoverPage = () => {
         break;
     }
     return result;
-  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilter, ethnicityFilter, sortBy]);
+  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, sortBy]);
 
   // Reset visible count when filters/sort change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilter, ethnicityFilter, sortBy]);
+  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, sortBy]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -176,8 +179,9 @@ const DiscoverPage = () => {
     (priceMax < 1000 ? 1 : 0) +
     (locationFilter ? 1 : 0) +
     (countryFilter ? 1 : 0) +
-    (bodyTypeFilter ? 1 : 0) +
-    (ethnicityFilter ? 1 : 0);
+    bodyTypeFilters.length +
+    ethnicityFilters.length +
+    (ageMin > 18 || ageMax < 65 ? 1 : 0);
 
   const clearAllFilters = () => {
     setSelectedServices([]);
@@ -186,10 +190,17 @@ const DiscoverPage = () => {
     setPriceMax(1000);
     setLocationFilter("");
     setCountryFilter("");
-    setBodyTypeFilter("");
-    setEthnicityFilter("");
+    setBodyTypeFilters([]);
+    setEthnicityFilters([]);
+    setAgeMin(18);
+    setAgeMax(65);
     setSearchQuery("");
   };
+
+  const toggleBodyType = (b: string) =>
+    setBodyTypeFilters((prev) => prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]);
+  const toggleEthnicity = (e: string) =>
+    setEthnicityFilters((prev) => prev.includes(e) ? prev.filter((x) => x !== e) : [...prev, e]);
 
   // ── AI Recommendations ──
   const recommendedCompanions = (recommendations?.recommended || [])
@@ -238,7 +249,7 @@ const DiscoverPage = () => {
     return recent;
   }, [companions]);
 
-  const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceMax < 1000 || priceMin > 0 || locationFilter || countryFilter || bodyTypeFilter || ethnicityFilter;
+  const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceMax < 1000 || priceMin > 0 || locationFilter || countryFilter || bodyTypeFilters.length > 0 || ethnicityFilters.length > 0 || ageMin > 18 || ageMax < 65;
   const hasLocationSections = !isSearching && (nearYou.length > 0 || newArrivals.length > 0);
   const cityDisplayName = profile?.location?.split(",")[0]?.trim();
 
@@ -366,9 +377,9 @@ const DiscoverPage = () => {
                     {BODY_TYPES.map((b) => (
                       <button
                         key={b}
-                        onClick={() => setBodyTypeFilter(bodyTypeFilter === b ? "" : b)}
+                        onClick={() => toggleBodyType(b)}
                         className={`px-2.5 py-1 rounded-full text-xs transition-colors
-                          ${bodyTypeFilter === b ? "gradient-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+                          ${bodyTypeFilters.includes(b) ? "gradient-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
                       >
                         {b}
                       </button>
@@ -383,9 +394,9 @@ const DiscoverPage = () => {
                     {ETHNICITIES.map((e) => (
                       <button
                         key={e}
-                        onClick={() => setEthnicityFilter(ethnicityFilter === e ? "" : e)}
+                        onClick={() => toggleEthnicity(e)}
                         className={`px-2.5 py-1 rounded-full text-xs transition-colors
-                          ${ethnicityFilter === e ? "gradient-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+                          ${ethnicityFilters.includes(e) ? "gradient-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
                       >
                         {e}
                       </button>
@@ -463,6 +474,43 @@ const DiscoverPage = () => {
                   </div>
                 </div>
 
+                {/* Age Range */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">
+                    Age: {ageMin} — {ageMax === 65 ? "65+" : ageMax}
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-muted-foreground w-8">Min</span>
+                      <input
+                        type="range"
+                        min={18} max={65} step={1}
+                        value={ageMin}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setAgeMin(Math.min(val, ageMax));
+                        }}
+                        className="w-full accent-gold"
+                      />
+                      <span className="text-xs text-foreground w-10 text-right">{ageMin}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-muted-foreground w-8">Max</span>
+                      <input
+                        type="range"
+                        min={18} max={65} step={1}
+                        value={ageMax}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setAgeMax(Math.max(val, ageMin));
+                        }}
+                        className="w-full accent-gold"
+                      />
+                      <span className="text-xs text-foreground w-10 text-right">{ageMax === 65 ? "65+" : ageMax}</span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Clear All */}
                 {activeFilterCount > 0 && (
                   <button
@@ -486,11 +534,17 @@ const DiscoverPage = () => {
             {countryFilter && (
               <FilterChip label={`🌍 ${countryFilter}`} onRemove={() => setCountryFilter("")} />
             )}
-            {bodyTypeFilter && (
-              <FilterChip label={bodyTypeFilter} onRemove={() => setBodyTypeFilter("")} />
-            )}
-            {ethnicityFilter && (
-              <FilterChip label={ethnicityFilter} onRemove={() => setEthnicityFilter("")} />
+            {bodyTypeFilters.map((b) => (
+              <FilterChip key={`bt-${b}`} label={b} onRemove={() => toggleBodyType(b)} />
+            ))}
+            {ethnicityFilters.map((e) => (
+              <FilterChip key={`et-${e}`} label={e} onRemove={() => toggleEthnicity(e)} />
+            ))}
+            {(ageMin > 18 || ageMax < 65) && (
+              <FilterChip
+                label={`Age ${ageMin}–${ageMax === 65 ? "65+" : ageMax}`}
+                onRemove={() => { setAgeMin(18); setAgeMax(65); }}
+              />
             )}
             {selectedGender !== "all" && (
               <FilterChip label={selectedGender} onRemove={() => setSelectedGender("all")} />
