@@ -50,8 +50,8 @@ const ResetPasswordPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
-      toast({ title: "Too short", description: "Password must be at least 6 characters", variant: "destructive" });
+    if (password.length < 8) {
+      toast({ title: "Too short", description: "Password must be at least 8 characters", variant: "destructive" });
       return;
     }
     if (password !== confirm) {
@@ -122,7 +122,7 @@ const ResetPasswordPage = () => {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="New password (min 6 chars)"
+                  placeholder="New password (min 8 chars)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
