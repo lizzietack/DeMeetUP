@@ -39,7 +39,6 @@ const ChatPage = () => {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [isRecordingMode, setIsRecordingMode] = useState(false);
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const keyboardInset = useKeyboardInset();
@@ -398,7 +397,6 @@ const ChatPage = () => {
             </div>
           </motion.div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
