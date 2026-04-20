@@ -77,7 +77,7 @@ const PWAInstallBanner = () => {
               <Download className="w-6 h-6 text-gold" />
             </div>
             <div className="flex-1 min-w-0 pr-4">
-              <p className="text-sm font-semibold text-foreground">Install Velvet Circle</p>
+              <p className="text-sm font-semibold text-foreground">Install DeMeetUP</p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {isIOS
                   ? "Tap Share → Add to Home Screen for the full app experience"
