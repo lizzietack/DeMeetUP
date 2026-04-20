@@ -155,21 +155,6 @@ const ChatPage = () => {
     }
   };
 
-  const StatusIcon = ({ msg }: { msg: { senderId: string; readAt: string | null } }) => {
-    if (msg.senderId !== user?.id) return null;
-    if (msg.readAt) {
-      return (
-        <span className="inline-flex items-center gap-0.5 group/read relative">
-          <CheckCheck className="w-3 h-3 text-gold" />
-          <span className="absolute bottom-full right-0 mb-1 hidden group-hover/read:block whitespace-nowrap text-[9px] bg-popover text-popover-foreground px-2 py-1 rounded-lg shadow-lg border border-border/50">
-            Read {new Date(msg.readAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-          </span>
-        </span>
-      );
-    }
-    return <Check className="w-3 h-3 text-muted-foreground" />;
-  };
-
   if (!conversationId) return null;
 
   return (
