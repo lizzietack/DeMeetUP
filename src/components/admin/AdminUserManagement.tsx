@@ -4,8 +4,8 @@ import { useAdminCompanionProfiles, useAdminUpdateProfile, useAdminUpdateCompani
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
-const AdminUserManagement = () => {
-  const { data: companions, isLoading } = useAdminCompanionProfiles();
+const AdminUserManagement = ({ isAdmin = false }: { isAdmin?: boolean }) => {
+  const { data: companions, isLoading } = useAdminCompanionProfiles(isAdmin);
   const updateProfile = useAdminUpdateProfile();
   const updateCompanion = useAdminUpdateCompanion();
   const [filter, setFilter] = useState<"all" | "verified" | "unverified" | "flagged">("all");

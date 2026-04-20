@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X, ArrowUpDown, ChevronDown, Globe, Link2 } from "lucide-react";
@@ -74,10 +74,14 @@ const SORT_LABELS: Record<SortOption, string> = {
   rating: "Top Rated",
 };
 
-const PAGE_SIZE = 12;
-
 const DiscoverPage = () => {
-  const { data: companions = [], isLoading } = useCompanions();
+  const {
+    data: companions = [],
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useCompanions();
   const { user, profile } = useAuth();
   const { data: recommendations, isLoading: recsLoading } = useRecommendations();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -114,8 +118,6 @@ const DiscoverPage = () => {
   const [verifiedOnly, setVerifiedOnly] = useState(initial.verified);
   const [sortBy, setSortBy] = useState<SortOption>(initial.sort);
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Sync filters → URL (debounced via microtask on each change)
   useEffect(() => {
@@ -207,28 +209,7 @@ const DiscoverPage = () => {
     return result;
   }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, verifiedOnly, sortBy, profile?.location, (profile as any)?.country]);
 
-  // Reset visible count when filters/sort change
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, verifiedOnly, sortBy]);
-
-  // Infinite scroll observer
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && visibleCount < filtered.length) {
-          setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filtered.length));
-        }
-      },
-      { rootMargin: "200px" }
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [visibleCount, filtered.length]);
-
-  const visibleCompanions = filtered.slice(0, visibleCount);
+  const visibleCompanions = filtered;
 
   const toggleService = (s: string) => {
     setSelectedServices((prev) =>
@@ -810,19 +791,24 @@ const DiscoverPage = () => {
               ))}
             </div>
 
-            {/* Infinite scroll sentinel */}
-            {visibleCount < filtered.length && (
-              <div ref={sentinelRef} className="flex justify-center py-6">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <div className="w-4 h-4 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
-                  Loading more...
-                </div>
+            {/* Server-side pagination — load more from the server, 24 at a time. */}
+            {hasNextPage && (
+              <div className="flex justify-center py-6">
+                <button
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                  className="px-5 py-2.5 rounded-xl gradient-gold text-primary-foreground font-display font-semibold text-sm glow-gold disabled:opacity-60 inline-flex items-center gap-2"
+                >
+                  {isFetchingNextPage && (
+                    <div className="w-3.5 h-3.5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
+                  )}
+                  {isFetchingNextPage ? "Loading…" : "Load more"}
+                </button>
               </div>
             )}
-
-            {visibleCount >= filtered.length && filtered.length > PAGE_SIZE && (
+            {!hasNextPage && companions.length > 0 && (
               <p className="text-center text-[10px] text-muted-foreground py-4">
-                You've seen all {filtered.length} companions
+                You've seen all {companions.length} companions
               </p>
             )}
 

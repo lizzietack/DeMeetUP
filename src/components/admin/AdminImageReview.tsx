@@ -5,9 +5,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
-const AdminImageReview = () => {
+const AdminImageReview = ({ isAdmin = false }: { isAdmin?: boolean }) => {
   const [statusFilter, setStatusFilter] = useState("pending_review");
-  const { data: images, isLoading } = useAdminImages(statusFilter);
+  const { data: images, isLoading } = useAdminImages(statusFilter, isAdmin);
   const updateImage = useAdminUpdateImage();
 
   const handleApprove = async (id: string) => {

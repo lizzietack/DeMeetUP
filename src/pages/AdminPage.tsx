@@ -86,24 +86,24 @@ const AdminPage = () => {
         {/* Content */}
         {tab === "overview" && (
           <div className="space-y-6">
-            <AdminStatsOverview />
+            <AdminStatsOverview isAdmin={isAdmin} />
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <h2 className="text-sm font-semibold text-foreground mb-3">Recent Images for Review</h2>
-                <AdminImageReview />
+                <AdminImageReview isAdmin={isAdmin} />
               </div>
               <div>
                 <h2 className="text-sm font-semibold text-foreground mb-3">Recent Reports</h2>
-                <AdminReportsPanel />
+                <AdminReportsPanel isAdmin={isAdmin} />
               </div>
             </div>
           </div>
         )}
-        {tab === "analytics" && <AdminAnalyticsCharts />}
-        {tab === "users" && <AdminUserManagement />}
-        {tab === "bookings" && <AdminBookingsPanel />}
-        {tab === "images" && <AdminImageReview />}
-        {tab === "reports" && <AdminReportsPanel />}
+        {tab === "analytics" && <AdminAnalyticsCharts isAdmin={isAdmin} />}
+        {tab === "users" && <AdminUserManagement isAdmin={isAdmin} />}
+        {tab === "bookings" && <AdminBookingsPanel isAdmin={isAdmin} />}
+        {tab === "images" && <AdminImageReview isAdmin={isAdmin} />}
+        {tab === "reports" && <AdminReportsPanel isAdmin={isAdmin} />}
       </div>
     </div>
   );

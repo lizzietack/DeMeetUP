@@ -17,12 +17,13 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-muted text-muted-foreground",
 };
 
-const AdminBookingsPanel = () => {
+const AdminBookingsPanel = ({ isAdmin = false }: { isAdmin?: boolean }) => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const queryClient = useQueryClient();
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["admin-bookings", statusFilter],
+    enabled: isAdmin,
     queryFn: async () => {
       let query = supabase
         .from("bookings")
