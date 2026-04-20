@@ -85,7 +85,8 @@ const RegisterPage = () => {
                 toast({ title: "Google sign-in failed", description: String(result.error), variant: "destructive" });
                 setGoogleLoading(false);
               } else if (!result.redirected) {
-                navigate("/select-role", { replace: true });
+                // New Google user — OnboardingGuard will handle role selection if needed.
+                navigate("/onboarding", { replace: true });
               }
             } catch (err: any) {
               toast({ title: "Google sign-in failed", description: err?.message || "Something went wrong", variant: "destructive" });
@@ -132,10 +133,11 @@ const RegisterPage = () => {
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Password (min 6 chars)"
+              placeholder={`Password (min ${MIN_PASSWORD_LENGTH} chars)`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="new-password"
               className="w-full bg-secondary rounded-xl pl-10 pr-10 py-3 text-sm text-foreground placeholder:text-muted-foreground
                          focus:outline-none focus:ring-1 focus:ring-gold/50"
             />
@@ -144,6 +146,31 @@ const RegisterPage = () => {
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+          {password.length > 0 && (
+            <div className="space-y-1 -mt-2">
+              <div className="flex gap-1 h-1">
+                {(["weak", "fair", "strong"] as StrengthLevel[]).map((lvl, i) => (
+                  <div
+                    key={lvl}
+                    className={`flex-1 rounded-full transition-all duration-300 ${
+                      (strength.level === "weak"   && i === 0) ||
+                      (strength.level === "fair"   && i <= 1) ||
+                      (strength.level === "strong" && i <= 2)
+                        ? strength.color
+                        : "bg-secondary"
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className={`text-xs ${
+                strength.level === "weak"   ? "text-red-400"    :
+                strength.level === "fair"   ? "text-yellow-400" :
+                                              "text-green-400"
+              }`}>
+                {strength.label} password
+              </p>
+            </div>
+          )}
 
           <button
             type="submit"
