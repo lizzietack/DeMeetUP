@@ -6,7 +6,7 @@ import { useSavedCompanionIds, useToggleSaveCompanion } from "@/hooks/use-saved-
 import { useAuth } from "@/contexts/AuthContext";
 
 interface CompanionCardProps {
-  companion: Companion;
+  companion: Companion & { bodyType?: string; ethnicity?: string };
   index?: number;
 }
 
