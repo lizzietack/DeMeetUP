@@ -143,12 +143,12 @@ const DiscoverPage = () => {
         break;
     }
     return result;
-  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, sortBy]);
+  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, verifiedOnly, sortBy]);
 
   // Reset visible count when filters/sort change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, sortBy]);
+  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, verifiedOnly, sortBy]);
 
   // Infinite scroll observer
   useEffect(() => {
