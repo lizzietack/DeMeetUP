@@ -6,6 +6,23 @@ import { lovable } from "@/integrations/lovable/index";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const MIN_PASSWORD_LENGTH = 8;
+
+type StrengthLevel = "weak" | "fair" | "strong";
+
+function getPasswordStrength(pwd: string): { level: StrengthLevel; label: string; color: string } {
+  if (pwd.length === 0) return { level: "weak", label: "", color: "" };
+  let score = 0;
+  if (pwd.length >= MIN_PASSWORD_LENGTH) score++;
+  if (pwd.length >= 12) score++;
+  if (/[A-Z]/.test(pwd)) score++;
+  if (/[0-9]/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+  if (score <= 2) return { level: "weak",   label: "Weak",   color: "bg-red-500"    };
+  if (score <= 3) return { level: "fair",   label: "Fair",   color: "bg-yellow-500" };
+  return             { level: "strong", label: "Strong", color: "bg-green-500"  };
+}
+
 const RegisterPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,23 +30,29 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signUp, user, loading } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const strength = getPasswordStrength(password);
 
   // GuestOnlyRoute handles redirect if already authenticated
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
-      toast({ title: "Password too short", description: "At least 6 characters required", variant: "destructive" });
+    if (isLoading) return;
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      toast({ title: "Password too short", description: `At least ${MIN_PASSWORD_LENGTH} characters required`, variant: "destructive" });
       return;
     }
     setIsLoading(true);
-    const { error } = await signUp(email, password, displayName);
+    const { error, needsEmailConfirmation } = await signUp(email, password, displayName);
     setIsLoading(false);
     if (error) {
       toast({ title: "Registration failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (needsEmailConfirmation) {
+      navigate("/verify-email", { replace: true, state: { email } });
     } else {
       navigate("/onboarding", { replace: true });
       toast({ title: "Account created!", description: "Complete your profile to get started." });
