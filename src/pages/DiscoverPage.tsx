@@ -313,6 +313,24 @@ const DiscoverPage = () => {
               className="overflow-hidden mb-4"
             >
               <div className="glass rounded-xl p-4 space-y-4">
+                {/* Verified Only Toggle */}
+                <button
+                  onClick={() => setVerifiedOnly((v) => !v)}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors
+                    ${verifiedOnly ? "bg-gold/15 border border-gold/40" : "bg-secondary border border-transparent"}`}
+                >
+                  <span className={`text-xs font-medium ${verifiedOnly ? "text-gold" : "text-muted-foreground"}`}>
+                    ✓ Verified companions only
+                  </span>
+                  <span
+                    className={`relative w-9 h-5 rounded-full transition-colors ${verifiedOnly ? "bg-gold" : "bg-muted"}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 w-4 h-4 bg-background rounded-full transition-transform ${verifiedOnly ? "translate-x-[18px]" : "translate-x-0.5"}`}
+                    />
+                  </span>
+                </button>
+
                 {/* Location Filter */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Location</p>
