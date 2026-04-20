@@ -1,10 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Send, Image, MoreVertical, Check, CheckCheck,
+  ArrowLeft, Send, Image, MoreVertical,
   DollarSign, Sparkles, ShieldBan, Flag, Mic,
 } from "lucide-react";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -18,15 +18,13 @@ import { useBlockUser, useBlockedUsers } from "@/hooks/use-blocked-users";
 import ReportUserModal from "@/components/ReportUserModal";
 import ImageLightbox from "@/components/chat/ImageLightbox";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
-import AudioMessage from "@/components/chat/AudioMessage";
-import { MessageReactions, QUICK_EMOJIS } from "@/components/chat/MessageReactions";
 import { useReactions, useToggleReaction } from "@/hooks/use-reactions";
-import { SmilePlus } from "lucide-react";
 import { useUploadToBucket } from "@/features/media/use-upload-to-bucket";
 import MediaPickerButton from "@/features/media/MediaPickerButton";
 import IconButton from "@/components/mobile/IconButton";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
 import { haptics } from "@/platform/haptics";
+import VirtualMessageList from "@/features/chat/components/VirtualMessageList";
 
 const ChatPage = () => {
   const { id: conversationId } = useParams();
