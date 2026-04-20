@@ -113,9 +113,17 @@ const CompanionProfilePage = () => {
               <Heart className={`w-5 h-5 ${isSaved ? "fill-destructive text-destructive" : "text-foreground"}`} />
             </button>
             <button
-              onClick={() => {
-                navigator.clipboard?.writeText(window.location.href);
-                toast.success("Link copied to clipboard!");
+              onClick={async () => {
+                const { share, canShare } = await import("@/platform/share");
+                const { clipboard } = await import("@/platform/clipboard");
+                const url = window.location.href;
+                if (canShare()) {
+                  const r = await share({ title: companion?.name || "DeMeetUP", url });
+                  if (r.shared) return;
+                }
+                const ok = await clipboard.copy(url);
+                if (ok) toast.success("Link copied to clipboard!");
+                else toast.error("Couldn't copy link");
               }}
               className="w-10 h-10 glass rounded-full flex items-center justify-center"
             >
