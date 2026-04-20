@@ -184,17 +184,17 @@ const ChatPage = () => {
   if (!conversationId) return null;
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="min-h-screen-d h-screen-d flex flex-col">
       {/* Header */}
-      <header className="glass-strong border-b border-border/50 flex-shrink-0">
+      <header className="glass-strong border-b border-border/50 flex-shrink-0 safe-top">
         <div className="flex items-center gap-3 px-4 py-3 max-w-lg mx-auto">
-          <button onClick={() => navigate("/chat")} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors">
+          <IconButton onClick={() => navigate("/chat")} aria-label="Back" className="w-11 h-11">
             <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
+          </IconButton>
           <div className="flex items-center gap-3 flex-1">
             <div className="relative">
               <img src={convInfo?.avatar || "/placeholder.svg"} alt="" className="w-10 h-10 rounded-full object-cover" />
-              {convInfo?.isOnline && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-background" />}
+              {convInfo?.isOnline && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-accent border-2 border-background" />}
             </div>
             <div>
               <h2 className="font-display font-semibold text-foreground text-sm">{convInfo?.name || "..."}</h2>
@@ -207,13 +207,17 @@ const ChatPage = () => {
               </p>
             </div>
           </div>
-          <button onClick={() => setShowTipModal(true)} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors" title="Send Tip">
+          <IconButton onClick={() => setShowTipModal(true)} aria-label="Send tip" className="w-11 h-11">
             <DollarSign className="w-5 h-5 text-gold" />
-          </button>
+          </IconButton>
           <div className="relative">
-            <button onClick={() => setShowChatMenu(!showChatMenu)} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors">
+            <IconButton
+              onClick={() => setShowChatMenu(!showChatMenu)}
+              aria-label="More options"
+              className="w-11 h-11"
+            >
               <MoreVertical className="w-5 h-5 text-muted-foreground" />
-            </button>
+            </IconButton>
             <AnimatePresence>
               {showChatMenu && (
                 <motion.div
@@ -245,7 +249,10 @@ const ChatPage = () => {
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 max-w-lg mx-auto w-full">
+      <div
+        ref={scrollerRef}
+        className="flex-1 overflow-y-auto scroll-smooth-touch px-4 py-4 space-y-3 max-w-lg mx-auto w-full"
+      >
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
@@ -383,55 +390,55 @@ const ChatPage = () => {
       </div>
 
       {/* Input */}
-      <div className="glass-strong border-t border-border/50 px-4 py-3 flex-shrink-0">
+      <div
+        className="glass-strong border-t border-border/50 px-4 py-3 flex-shrink-0 safe-bottom"
+        style={{ paddingBottom: keyboardInset > 0 ? keyboardInset + 12 : undefined }}
+      >
         <div className="max-w-lg mx-auto">
           {isRecordingMode ? (
-            <VoiceRecorder
-              onSend={handleSendVoiceNote}
-              disabled={isUploading}
-            />
+            <VoiceRecorder onSend={handleSendVoiceNote} disabled={isUploading} />
           ) : (
-            <div className="flex items-center gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
+            <div className="flex items-end gap-2">
+              <MediaPickerButton
+                onPicked={handleImagePicked}
                 accept="image/*"
-                className="hidden"
-                onChange={handleImageUpload}
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
+                maxSizeMB={5}
                 disabled={isUploading}
-                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-50"
+                ariaLabel="Attach image"
+                className="tap-target press inline-flex items-center justify-center rounded-full text-muted-foreground hover:bg-secondary disabled:opacity-50"
               >
                 {isUploading ? (
                   <div className="w-5 h-5 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <Image className="w-5 h-5 text-muted-foreground" />
+                  <Image className="w-5 h-5" />
                 )}
-              </button>
+              </MediaPickerButton>
               <div className="flex-1 relative">
                 <input
                   type="text"
+                  inputMode="text"
+                  enterKeyHint="send"
+                  autoComplete="off"
+                  autoCorrect="on"
                   placeholder="Type a message..."
                   value={message}
                   onChange={(e) => { setMessage(e.target.value); handleTyping(); }}
-                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                  className="w-full bg-secondary rounded-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground
-                             focus:outline-none focus:ring-1 focus:ring-gold/50"
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                  className="w-full bg-secondary rounded-full px-4 py-3 text-base text-foreground placeholder:text-muted-foreground
+                             focus:outline-none focus:ring-1 focus:ring-gold/50 selectable"
                 />
               </div>
               {message.trim() ? (
-                <button onClick={handleSend} className="w-9 h-9 rounded-full gradient-gold flex items-center justify-center glow-gold">
-                  <Send className="w-4 h-4 text-primary-foreground" />
-                </button>
+                <IconButton onClick={handleSend} aria-label="Send" variant="primary">
+                  <Send className="w-4 h-4" />
+                </IconButton>
               ) : (
-                <button
-                  onClick={() => setIsRecordingMode(true)}
-                  className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
+                <IconButton
+                  onClick={() => { haptics.impact("medium"); setIsRecordingMode(true); }}
+                  aria-label="Record voice"
                 >
                   <Mic className="w-5 h-5 text-muted-foreground" />
-                </button>
+                </IconButton>
               )}
             </div>
           )}
