@@ -17,7 +17,7 @@ const HomePage = () => {
       <header className="sticky top-0 z-30 glass-strong">
         <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
           <div>
-            <h1 className="font-display text-xl font-bold text-foreground">Velvet Circle</h1>
+            <h1 className="font-display text-xl font-bold text-foreground">DeMeetUP</h1>
             <p className="text-[10px] text-gold tracking-[0.2em] uppercase">Exclusive Connections</p>
           </div>
           <button className="w-9 h-9 glass rounded-full flex items-center justify-center">
