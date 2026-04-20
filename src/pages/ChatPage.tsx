@@ -38,7 +38,6 @@ const ChatPage = () => {
   const [isRecordingMode, setIsRecordingMode] = useState(false);
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<string | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const scrollerRef = useRef<HTMLDivElement>(null);
   const keyboardInset = useKeyboardInset();
 
   const { data: messages = [], isLoading } = useMessages(conversationId);
@@ -93,13 +92,6 @@ const ChatPage = () => {
       toast.error("Failed to block user");
     }
   };
-
-  useEffect(() => {
-    // Use auto on first paint, smooth after — feels much faster on mobile.
-    const el = scrollerRef.current;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: messages.length > 1 ? "smooth" : "auto" });
-  }, [messages, isOtherTyping]);
 
   const handleTyping = useCallback(() => {
     if (!conversationId) return;
