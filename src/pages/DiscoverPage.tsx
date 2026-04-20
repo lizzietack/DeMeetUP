@@ -82,8 +82,10 @@ const DiscoverPage = () => {
   const [selectedGender, setSelectedGender] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState("");
   const [countryFilter, setCountryFilter] = useState("");
-  const [bodyTypeFilter, setBodyTypeFilter] = useState("");
-  const [ethnicityFilter, setEthnicityFilter] = useState("");
+  const [bodyTypeFilters, setBodyTypeFilters] = useState<string[]>([]);
+  const [ethnicityFilters, setEthnicityFilters] = useState<string[]>([]);
+  const [ageMin, setAgeMin] = useState(18);
+  const [ageMax, setAgeMax] = useState(65);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -116,8 +118,9 @@ const DiscoverPage = () => {
       if (selectedGender !== "all" && c.gender !== selectedGender) return false;
       if (locationFilter && !c.location.toLowerCase().includes(locationFilter.toLowerCase())) return false;
       if (countryFilter && (cAny.country || "") !== countryFilter) return false;
-      if (bodyTypeFilter && (cAny.bodyType || "") !== bodyTypeFilter) return false;
-      if (ethnicityFilter && (cAny.ethnicity || "") !== ethnicityFilter) return false;
+      if (bodyTypeFilters.length > 0 && !bodyTypeFilters.includes(cAny.bodyType || "")) return false;
+      if (ethnicityFilters.length > 0 && !ethnicityFilters.includes(cAny.ethnicity || "")) return false;
+      if (c.age > 0 && (c.age < ageMin || c.age > ageMax)) return false;
       return true;
     });
 
@@ -138,12 +141,12 @@ const DiscoverPage = () => {
         break;
     }
     return result;
-  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilter, ethnicityFilter, sortBy]);
+  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, sortBy]);
 
   // Reset visible count when filters/sort change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilter, ethnicityFilter, sortBy]);
+  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, sortBy]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -176,8 +179,9 @@ const DiscoverPage = () => {
     (priceMax < 1000 ? 1 : 0) +
     (locationFilter ? 1 : 0) +
     (countryFilter ? 1 : 0) +
-    (bodyTypeFilter ? 1 : 0) +
-    (ethnicityFilter ? 1 : 0);
+    bodyTypeFilters.length +
+    ethnicityFilters.length +
+    (ageMin > 18 || ageMax < 65 ? 1 : 0);
 
   const clearAllFilters = () => {
     setSelectedServices([]);
@@ -186,10 +190,17 @@ const DiscoverPage = () => {
     setPriceMax(1000);
     setLocationFilter("");
     setCountryFilter("");
-    setBodyTypeFilter("");
-    setEthnicityFilter("");
+    setBodyTypeFilters([]);
+    setEthnicityFilters([]);
+    setAgeMin(18);
+    setAgeMax(65);
     setSearchQuery("");
   };
+
+  const toggleBodyType = (b: string) =>
+    setBodyTypeFilters((prev) => prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]);
+  const toggleEthnicity = (e: string) =>
+    setEthnicityFilters((prev) => prev.includes(e) ? prev.filter((x) => x !== e) : [...prev, e]);
 
   // ── AI Recommendations ──
   const recommendedCompanions = (recommendations?.recommended || [])
