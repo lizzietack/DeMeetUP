@@ -1,10 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Send, Image, MoreVertical, Check, CheckCheck,
-  DollarSign, Sparkles, ShieldBan, Flag, Mic,
+  ArrowLeft, Send, Image, MoreVertical,
+  DollarSign, ShieldBan, Flag, Mic,
 } from "lucide-react";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -18,15 +18,13 @@ import { useBlockUser, useBlockedUsers } from "@/hooks/use-blocked-users";
 import ReportUserModal from "@/components/ReportUserModal";
 import ImageLightbox from "@/components/chat/ImageLightbox";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
-import AudioMessage from "@/components/chat/AudioMessage";
-import { MessageReactions, QUICK_EMOJIS } from "@/components/chat/MessageReactions";
 import { useReactions, useToggleReaction } from "@/hooks/use-reactions";
-import { SmilePlus } from "lucide-react";
 import { useUploadToBucket } from "@/features/media/use-upload-to-bucket";
 import MediaPickerButton from "@/features/media/MediaPickerButton";
 import IconButton from "@/components/mobile/IconButton";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
 import { haptics } from "@/platform/haptics";
+import VirtualMessageList from "@/features/chat/components/VirtualMessageList";
 
 const ChatPage = () => {
   const { id: conversationId } = useParams();
@@ -40,7 +38,6 @@ const ChatPage = () => {
   const [isRecordingMode, setIsRecordingMode] = useState(false);
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<string | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const scrollerRef = useRef<HTMLDivElement>(null);
   const keyboardInset = useKeyboardInset();
 
   const { data: messages = [], isLoading } = useMessages(conversationId);
@@ -95,13 +92,6 @@ const ChatPage = () => {
       toast.error("Failed to block user");
     }
   };
-
-  useEffect(() => {
-    // Use auto on first paint, smooth after — feels much faster on mobile.
-    const el = scrollerRef.current;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: messages.length > 1 ? "smooth" : "auto" });
-  }, [messages, isOtherTyping]);
 
   const handleTyping = useCallback(() => {
     if (!conversationId) return;
@@ -163,21 +153,6 @@ const ChatPage = () => {
     } finally {
       setIsRecordingMode(false);
     }
-  };
-
-  const StatusIcon = ({ msg }: { msg: { senderId: string; readAt: string | null } }) => {
-    if (msg.senderId !== user?.id) return null;
-    if (msg.readAt) {
-      return (
-        <span className="inline-flex items-center gap-0.5 group/read relative">
-          <CheckCheck className="w-3 h-3 text-gold" />
-          <span className="absolute bottom-full right-0 mb-1 hidden group-hover/read:block whitespace-nowrap text-[9px] bg-popover text-popover-foreground px-2 py-1 rounded-lg shadow-lg border border-border/50">
-            Read {new Date(msg.readAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-          </span>
-        </span>
-      );
-    }
-    return <Check className="w-3 h-3 text-muted-foreground" />;
   };
 
   if (!conversationId) return null;
@@ -248,156 +223,22 @@ const ChatPage = () => {
       </header>
 
       {/* Messages */}
-      <div
-        ref={scrollerRef}
-        className="flex-1 overflow-y-auto scroll-smooth-touch px-4 py-4 space-y-3 max-w-lg mx-auto w-full"
-      >
-        {isLoading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          messages.map((msg, i) => {
-            const isMe = msg.senderId === user?.id;
-            const isTip = msg.messageType === "tip";
-            const isImage = msg.messageType === "image";
-            const isVoice = msg.messageType === "voice";
-
-            return (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(i * 0.03, 0.5) }}
-                className={`flex ${isMe ? "justify-end" : "justify-start"} group/msg`}
-              >
-                <div className="relative max-w-[75%]">
-                  {/*
-                    Reaction trigger: visible on hover (desktop) AND
-                    accessible on mobile via long-press (handled by
-                    onContextMenu below on the bubble).
-                  */}
-                  <button
-                    onClick={() => setActiveReactionMsgId(activeReactionMsgId === msg.id ? null : msg.id)}
-                    aria-label="Add reaction"
-                    className={`absolute top-1 ${isMe ? "-left-8" : "-right-8"} w-7 h-7 rounded-full bg-secondary/80 border border-border/30 items-center justify-center opacity-0 group-hover/msg:opacity-100 transition-opacity hidden sm:flex`}
-                  >
-                    <SmilePlus className="w-3.5 h-3.5 text-muted-foreground" />
-                  </button>
-
-                  <div
-                    className={`px-4 py-2.5 rounded-2xl ${
-                      isTip
-                        ? "gradient-gold text-primary-foreground rounded-br-sm glow-gold"
-                        : isMe
-                          ? "gradient-gold text-primary-foreground rounded-br-sm"
-                          : "glass rounded-bl-sm"
-                    }`}
-                    onDoubleClick={() => setActiveReactionMsgId(activeReactionMsgId === msg.id ? null : msg.id)}
-                    onContextMenu={(e) => {
-                      // Long-press on touch devices fires a contextmenu — use it
-                      // for the reaction picker since hover doesn't exist on touch.
-                      e.preventDefault();
-                      haptics.impact("medium");
-                      setActiveReactionMsgId(activeReactionMsgId === msg.id ? null : msg.id);
-                    }}
-                  >
-                    {isTip && (
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span className="text-xs font-semibold">Tip</span>
-                      </div>
-                    )}
-                    {isImage ? (
-                      <button onClick={() => setLightboxSrc(msg.content)} className="block">
-                        <img
-                          src={msg.content}
-                          alt="Shared image"
-                          className="rounded-lg max-w-full max-h-60 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                          loading="lazy"
-                        />
-                      </button>
-                    ) : isVoice ? (
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <Mic className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span className="text-xs font-semibold">Voice Note</span>
-                      </div>
-                    ) : (
-                      <p className="text-sm leading-relaxed">{msg.content}</p>
-                    )}
-                    {isVoice && (
-                      <AudioMessage
-                        src={msg.content}
-                        duration={msg.metadata?.duration}
-                        isMe={isMe}
-                      />
-                    )}
-                    <div className={`flex items-center gap-1 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
-                      <span className={`text-[10px] ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                      </span>
-                      <StatusIcon msg={msg} />
-                    </div>
-                  </div>
-
-                  {/* Quick emoji picker */}
-                  <AnimatePresence>
-                    {activeReactionMsgId === msg.id && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 4 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 4 }}
-                        className={`absolute z-50 ${isMe ? "right-0" : "left-0"} -top-10 glass-strong rounded-xl px-2 py-1.5 flex gap-1`}
-                      >
-                        {QUICK_EMOJIS.map((emoji) => (
-                          <button
-                            key={emoji}
-                            onClick={() => {
-                              toggleReaction.mutate({ messageId: msg.id, emoji });
-                              setActiveReactionMsgId(null);
-                            }}
-                            className="w-8 h-8 rounded-lg hover:bg-secondary/80 flex items-center justify-center text-lg transition-colors"
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Reactions display */}
-                  {reactionsMap[msg.id]?.length > 0 && (
-                    <MessageReactions
-                      reactions={reactionsMap[msg.id]}
-                      currentUserId={user?.id || ""}
-                      onToggle={(emoji) => toggleReaction.mutate({ messageId: msg.id, emoji })}
-                      isMe={isMe}
-                    />
-                  )}
-                </div>
-              </motion.div>
-            );
-          })
-        )}
-
-        {/* Typing indicator */}
-        {isOtherTyping && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-            <div className="glass rounded-2xl rounded-bl-sm px-4 py-3">
-              <div className="flex gap-1">
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="w-2 h-2 rounded-full bg-muted-foreground"
-                    animate={{ y: [0, -6, 0] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
-                  />
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : (
+        <VirtualMessageList
+          messages={messages}
+          currentUserId={user?.id || ""}
+          reactionsMap={reactionsMap}
+          isOtherTyping={isOtherTyping}
+          activeReactionMsgId={activeReactionMsgId}
+          onSetActiveReaction={setActiveReactionMsgId}
+          onToggleReaction={(messageId, emoji) => toggleReaction.mutate({ messageId, emoji })}
+          onOpenLightbox={setLightboxSrc}
+        />
+      )}
 
       {/* Input */}
       <div
