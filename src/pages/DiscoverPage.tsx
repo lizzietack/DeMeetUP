@@ -183,7 +183,8 @@ const DiscoverPage = () => {
     (countryFilter ? 1 : 0) +
     bodyTypeFilters.length +
     ethnicityFilters.length +
-    (ageMin > 18 || ageMax < 65 ? 1 : 0);
+    (ageMin > 18 || ageMax < 65 ? 1 : 0) +
+    (verifiedOnly ? 1 : 0);
 
   const clearAllFilters = () => {
     setSelectedServices([]);
@@ -196,6 +197,7 @@ const DiscoverPage = () => {
     setEthnicityFilters([]);
     setAgeMin(18);
     setAgeMax(65);
+    setVerifiedOnly(false);
     setSearchQuery("");
   };
 
