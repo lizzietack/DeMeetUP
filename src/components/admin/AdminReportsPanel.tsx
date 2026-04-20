@@ -4,9 +4,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, CheckCircle2, XCircle, ShieldBan } from "lucide-react";
 import { toast } from "sonner";
 
-const AdminReportsPanel = () => {
+const AdminReportsPanel = ({ isAdmin = false }: { isAdmin?: boolean }) => {
   const [statusFilter, setStatusFilter] = useState("pending");
-  const { data: reports, isLoading } = useAdminReports(statusFilter);
+  const { data: reports, isLoading } = useAdminReports(statusFilter, isAdmin);
   const updateReport = useAdminUpdateReport();
   const updateProfile = useAdminUpdateProfile();
 

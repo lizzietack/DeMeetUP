@@ -2,6 +2,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck } from "lucide-react";
 import { storage } from "@/platform/storage";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AgeVerificationProps {
   onVerified: () => void;
@@ -9,10 +11,18 @@ interface AgeVerificationProps {
 
 const AgeVerification = ({ onVerified }: AgeVerificationProps) => {
   const [exiting, setExiting] = useState(false);
+  const { user } = useAuth();
 
   const handleConfirm = () => {
     setExiting(true);
     void storage.set("vc_age_verified", "true");
+    // For authenticated users, persist server-side so clearing storage can't bypass it.
+    if (user) {
+      void supabase
+        .from("profiles")
+        .update({ age_verified: true } as any)
+        .eq("user_id", user.id);
+    }
     setTimeout(onVerified, 600);
   };
 

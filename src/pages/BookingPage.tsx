@@ -70,6 +70,28 @@ const BookingPage = () => {
     );
   }
 
+  // Self-booking guard: a companion cannot book their own profile.
+  if (user && companion.userId === user.id) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 gap-4 text-center">
+        <div className="glass-strong rounded-2xl p-8 max-w-sm w-full">
+          <h1 className="font-display text-xl font-bold text-foreground mb-2">
+            You cannot book your own profile
+          </h1>
+          <p className="text-muted-foreground text-sm mb-6">
+            This is your own companion profile. Switch to another account to make a booking.
+          </p>
+          <button
+            onClick={() => navigate("/discover")}
+            className="w-full gradient-gold text-primary-foreground font-display font-semibold py-3 rounded-xl glow-gold"
+          >
+            Browse Discover
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const serviceFee = isOvernight
     ? companion.overnightRate
     : duration * companion.hourlyRate;

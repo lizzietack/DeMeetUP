@@ -13,8 +13,8 @@ const StatCard = ({ icon: Icon, label, value, color }: { icon: any; label: strin
   </div>
 );
 
-const AdminStatsOverview = () => {
-  const { data: stats, isLoading } = useAdminStats();
+const AdminStatsOverview = ({ isAdmin = false }: { isAdmin?: boolean }) => {
+  const { data: stats, isLoading } = useAdminStats(isAdmin);
 
   if (isLoading) {
     return (

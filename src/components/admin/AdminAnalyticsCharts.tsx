@@ -3,9 +3,9 @@ import { useAdminAnalytics } from "@/hooks/use-admin";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const AdminAnalyticsCharts = () => {
+const AdminAnalyticsCharts = ({ isAdmin = false }: { isAdmin?: boolean }) => {
   const [days, setDays] = useState(30);
-  const { data: analytics, isLoading } = useAdminAnalytics(days);
+  const { data: analytics, isLoading } = useAdminAnalytics(days, isAdmin);
 
   if (isLoading) {
     return (

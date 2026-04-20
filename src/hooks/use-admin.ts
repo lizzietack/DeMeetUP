@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format, subDays, eachDayOfInterval } from "date-fns";
 
-export const useAdminStats = () => {
+export const useAdminStats = (enabled: boolean = false) => {
   return useQuery({
     queryKey: ["admin-stats"],
+    enabled,
     queryFn: async () => {
       const [profiles, companions, bookings, reports, pendingImages] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
@@ -25,9 +26,10 @@ export const useAdminStats = () => {
   });
 };
 
-export const useAdminProfiles = (filter: "all" | "flagged" | "companions" | "unverified") => {
+export const useAdminProfiles = (filter: "all" | "flagged" | "companions" | "unverified", enabled: boolean = false) => {
   return useQuery({
     queryKey: ["admin-profiles", filter],
+    enabled,
     queryFn: async () => {
       let query = supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(100);
       if (filter === "flagged") query = query.eq("flagged_for_review", true);
@@ -40,9 +42,10 @@ export const useAdminProfiles = (filter: "all" | "flagged" | "companions" | "unv
   });
 };
 
-export const useAdminCompanionProfiles = () => {
+export const useAdminCompanionProfiles = (enabled: boolean = false) => {
   return useQuery({
     queryKey: ["admin-companion-profiles"],
+    enabled,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companion_profiles")
@@ -55,9 +58,10 @@ export const useAdminCompanionProfiles = () => {
   });
 };
 
-export const useAdminReports = (statusFilter: string) => {
+export const useAdminReports = (statusFilter: string, enabled: boolean = false) => {
   return useQuery({
     queryKey: ["admin-reports", statusFilter],
+    enabled,
     queryFn: async () => {
       let query = supabase.from("reports").select("*").order("created_at", { ascending: false }).limit(100);
       if (statusFilter !== "all") query = query.eq("status", statusFilter as any);
@@ -121,9 +125,10 @@ export const useAdminUpdateReport = () => {
   });
 };
 
-export const useAdminAnalytics = (days: number = 30) => {
+export const useAdminAnalytics = (days: number = 30, enabled: boolean = false) => {
   return useQuery({
     queryKey: ["admin-analytics", days],
+    enabled,
     queryFn: async () => {
       const startDate = subDays(new Date(), days);
       const interval = eachDayOfInterval({ start: startDate, end: new Date() });

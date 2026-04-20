@@ -108,9 +108,10 @@ export const useUploadAndModerate = () => {
   });
 };
 
-export const useAdminImages = (statusFilter?: string) => {
+export const useAdminImages = (statusFilter?: string, enabled: boolean = false) => {
   return useQuery({
     queryKey: ["admin-images", statusFilter],
+    enabled,
     queryFn: async () => {
       let query = supabase
         .from("image_moderation")

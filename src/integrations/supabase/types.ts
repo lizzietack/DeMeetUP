@@ -320,6 +320,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age_verified: boolean
           avatar_url: string | null
           bio: string | null
           body_type: string | null
@@ -343,6 +344,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          age_verified?: boolean
           avatar_url?: string | null
           bio?: string | null
           body_type?: string | null
@@ -366,6 +368,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          age_verified?: boolean
           avatar_url?: string | null
           bio?: string | null
           body_type?: string | null
