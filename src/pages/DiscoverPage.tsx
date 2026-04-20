@@ -122,6 +122,7 @@ const DiscoverPage = () => {
       if (bodyTypeFilters.length > 0 && !bodyTypeFilters.includes(cAny.bodyType || "")) return false;
       if (ethnicityFilters.length > 0 && !ethnicityFilters.includes(cAny.ethnicity || "")) return false;
       if (c.age > 0 && (c.age < ageMin || c.age > ageMax)) return false;
+      if (verifiedOnly && !c.verified) return false;
       return true;
     });
 
