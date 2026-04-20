@@ -4,7 +4,7 @@ import {
   ArrowLeft, Send, Image, MoreVertical, Check, CheckCheck,
   DollarSign, Sparkles, ShieldBan, Flag, Mic,
 } from "lucide-react";
-import { useState, useRef, useEffect, useCallback, ChangeEvent } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -22,6 +22,11 @@ import AudioMessage from "@/components/chat/AudioMessage";
 import { MessageReactions, QUICK_EMOJIS } from "@/components/chat/MessageReactions";
 import { useReactions, useToggleReaction } from "@/hooks/use-reactions";
 import { SmilePlus } from "lucide-react";
+import { useUploadToBucket } from "@/features/media/use-upload-to-bucket";
+import MediaPickerButton from "@/features/media/MediaPickerButton";
+import IconButton from "@/components/mobile/IconButton";
+import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
+import { haptics } from "@/platform/haptics";
 
 const ChatPage = () => {
   const { id: conversationId } = useParams();
@@ -31,13 +36,12 @@ const ChatPage = () => {
   const [showTipModal, setShowTipModal] = useState(false);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [isRecordingMode, setIsRecordingMode] = useState(false);
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const keyboardInset = useKeyboardInset();
 
   const { data: messages = [], isLoading } = useMessages(conversationId);
   const sendMessage = useSendMessage();
@@ -47,6 +51,7 @@ const ChatPage = () => {
   const { data: blockedUsers = [] } = useBlockedUsers();
   const { data: reactionsMap = {} } = useReactions(conversationId);
   const toggleReaction = useToggleReaction(conversationId);
+  const { upload, isUploading } = useUploadToBucket();
 
   // Get conversation info (other user)
   const { data: convInfo } = useQuery({
@@ -92,7 +97,10 @@ const ChatPage = () => {
   };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Use auto on first paint, smooth after — feels much faster on mobile.
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: messages.length > 1 ? "smooth" : "auto" });
   }, [messages, isOtherTyping]);
 
   const handleTyping = useCallback(() => {
@@ -104,6 +112,7 @@ const ChatPage = () => {
 
   const handleSend = () => {
     if (!message.trim() || !conversationId) return;
+    haptics.impact("light");
     sendMessage.mutate({ conversationId, content: message.trim() });
     setMessage("");
     setTyping(null);
@@ -120,72 +129,38 @@ const ChatPage = () => {
     });
   };
 
-  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !conversationId || !user) return;
-
+  const handleImagePicked = async (file: File) => {
+    if (!conversationId || !user) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Only image files are allowed");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB");
-      return;
-    }
-
-    setIsUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${user.id}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("chat-images")
-        .upload(path, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("chat-images")
-        .getPublicUrl(path);
-
+      const result = await upload("chat-images", user.id, file);
       sendMessage.mutate({
         conversationId,
-        content: urlData.publicUrl,
+        content: result.publicUrl,
         messageType: "image",
-        metadata: { fileName: file.name, fileSize: file.size },
+        metadata: { fileName: result.fileName, fileSize: result.fileSize },
       });
     } catch {
       toast.error("Failed to upload image");
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
   const handleSendVoiceNote = async (blob: Blob, durationSec: number) => {
     if (!conversationId || !user) return;
-    setIsUploading(true);
     try {
-      const path = `${user.id}/${Date.now()}.webm`;
-      const { error: uploadError } = await supabase.storage
-        .from("voice-notes")
-        .upload(path, blob);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("voice-notes")
-        .getPublicUrl(path);
-
+      const result = await upload("voice-notes", user.id, blob, { extension: "webm" });
       sendMessage.mutate({
         conversationId,
-        content: urlData.publicUrl,
+        content: result.publicUrl,
         messageType: "voice",
         metadata: { duration: durationSec },
       });
     } catch {
       toast.error("Failed to send voice note");
     } finally {
-      setIsUploading(false);
       setIsRecordingMode(false);
     }
   };
@@ -208,17 +183,17 @@ const ChatPage = () => {
   if (!conversationId) return null;
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="min-h-screen-d h-screen-d flex flex-col">
       {/* Header */}
-      <header className="glass-strong border-b border-border/50 flex-shrink-0">
+      <header className="glass-strong border-b border-border/50 flex-shrink-0 safe-top">
         <div className="flex items-center gap-3 px-4 py-3 max-w-lg mx-auto">
-          <button onClick={() => navigate("/chat")} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors">
+          <IconButton onClick={() => navigate("/chat")} aria-label="Back" className="w-11 h-11">
             <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
+          </IconButton>
           <div className="flex items-center gap-3 flex-1">
             <div className="relative">
               <img src={convInfo?.avatar || "/placeholder.svg"} alt="" className="w-10 h-10 rounded-full object-cover" />
-              {convInfo?.isOnline && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-background" />}
+              {convInfo?.isOnline && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-accent border-2 border-background" />}
             </div>
             <div>
               <h2 className="font-display font-semibold text-foreground text-sm">{convInfo?.name || "..."}</h2>
@@ -231,13 +206,17 @@ const ChatPage = () => {
               </p>
             </div>
           </div>
-          <button onClick={() => setShowTipModal(true)} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors" title="Send Tip">
+          <IconButton onClick={() => setShowTipModal(true)} aria-label="Send tip" className="w-11 h-11">
             <DollarSign className="w-5 h-5 text-gold" />
-          </button>
+          </IconButton>
           <div className="relative">
-            <button onClick={() => setShowChatMenu(!showChatMenu)} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors">
+            <IconButton
+              onClick={() => setShowChatMenu(!showChatMenu)}
+              aria-label="More options"
+              className="w-11 h-11"
+            >
               <MoreVertical className="w-5 h-5 text-muted-foreground" />
-            </button>
+            </IconButton>
             <AnimatePresence>
               {showChatMenu && (
                 <motion.div
@@ -269,7 +248,10 @@ const ChatPage = () => {
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 max-w-lg mx-auto w-full">
+      <div
+        ref={scrollerRef}
+        className="flex-1 overflow-y-auto scroll-smooth-touch px-4 py-4 space-y-3 max-w-lg mx-auto w-full"
+      >
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
@@ -290,12 +272,17 @@ const ChatPage = () => {
                 className={`flex ${isMe ? "justify-end" : "justify-start"} group/msg`}
               >
                 <div className="relative max-w-[75%]">
-                  {/* Reaction trigger on hover */}
+                  {/*
+                    Reaction trigger: visible on hover (desktop) AND
+                    accessible on mobile via long-press (handled by
+                    onContextMenu below on the bubble).
+                  */}
                   <button
                     onClick={() => setActiveReactionMsgId(activeReactionMsgId === msg.id ? null : msg.id)}
-                    className={`absolute top-1 ${isMe ? "-left-8" : "-right-8"} w-6 h-6 rounded-full bg-secondary/80 border border-border/30 items-center justify-center opacity-0 group-hover/msg:opacity-100 transition-opacity hidden sm:flex`}
+                    aria-label="Add reaction"
+                    className={`absolute top-1 ${isMe ? "-left-8" : "-right-8"} w-7 h-7 rounded-full bg-secondary/80 border border-border/30 items-center justify-center opacity-0 group-hover/msg:opacity-100 transition-opacity hidden sm:flex`}
                   >
-                    <SmilePlus className="w-3 h-3 text-muted-foreground" />
+                    <SmilePlus className="w-3.5 h-3.5 text-muted-foreground" />
                   </button>
 
                   <div
@@ -307,6 +294,13 @@ const ChatPage = () => {
                           : "glass rounded-bl-sm"
                     }`}
                     onDoubleClick={() => setActiveReactionMsgId(activeReactionMsgId === msg.id ? null : msg.id)}
+                    onContextMenu={(e) => {
+                      // Long-press on touch devices fires a contextmenu — use it
+                      // for the reaction picker since hover doesn't exist on touch.
+                      e.preventDefault();
+                      haptics.impact("medium");
+                      setActiveReactionMsgId(activeReactionMsgId === msg.id ? null : msg.id);
+                    }}
                   >
                     {isTip && (
                       <div className="flex items-center gap-1.5 mb-1">
@@ -403,59 +397,58 @@ const ChatPage = () => {
             </div>
           </motion.div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
-      <div className="glass-strong border-t border-border/50 px-4 py-3 flex-shrink-0">
+      <div
+        className="glass-strong border-t border-border/50 px-4 py-3 flex-shrink-0 safe-bottom"
+        style={{ paddingBottom: keyboardInset > 0 ? keyboardInset + 12 : undefined }}
+      >
         <div className="max-w-lg mx-auto">
           {isRecordingMode ? (
-            <VoiceRecorder
-              onSend={handleSendVoiceNote}
-              disabled={isUploading}
-            />
+            <VoiceRecorder onSend={handleSendVoiceNote} disabled={isUploading} />
           ) : (
-            <div className="flex items-center gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
+            <div className="flex items-end gap-2">
+              <MediaPickerButton
+                onPicked={handleImagePicked}
                 accept="image/*"
-                className="hidden"
-                onChange={handleImageUpload}
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
+                maxSizeMB={5}
                 disabled={isUploading}
-                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-50"
+                ariaLabel="Attach image"
+                className="tap-target press inline-flex items-center justify-center rounded-full text-muted-foreground hover:bg-secondary disabled:opacity-50"
               >
                 {isUploading ? (
                   <div className="w-5 h-5 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <Image className="w-5 h-5 text-muted-foreground" />
+                  <Image className="w-5 h-5" />
                 )}
-              </button>
+              </MediaPickerButton>
               <div className="flex-1 relative">
                 <input
                   type="text"
+                  inputMode="text"
+                  enterKeyHint="send"
+                  autoComplete="off"
+                  autoCorrect="on"
                   placeholder="Type a message..."
                   value={message}
                   onChange={(e) => { setMessage(e.target.value); handleTyping(); }}
-                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                  className="w-full bg-secondary rounded-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground
-                             focus:outline-none focus:ring-1 focus:ring-gold/50"
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                  className="w-full bg-secondary rounded-full px-4 py-3 text-base text-foreground placeholder:text-muted-foreground
+                             focus:outline-none focus:ring-1 focus:ring-gold/50 selectable"
                 />
               </div>
               {message.trim() ? (
-                <button onClick={handleSend} className="w-9 h-9 rounded-full gradient-gold flex items-center justify-center glow-gold">
-                  <Send className="w-4 h-4 text-primary-foreground" />
-                </button>
+                <IconButton onClick={handleSend} aria-label="Send" variant="primary">
+                  <Send className="w-4 h-4" />
+                </IconButton>
               ) : (
-                <button
-                  onClick={() => setIsRecordingMode(true)}
-                  className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
+                <IconButton
+                  onClick={() => { haptics.impact("medium"); setIsRecordingMode(true); }}
+                  aria-label="Record voice"
                 >
                   <Mic className="w-5 h-5 text-muted-foreground" />
-                </button>
+                </IconButton>
               )}
             </div>
           )}

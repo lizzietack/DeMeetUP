@@ -10,6 +10,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { Companion } from "@/data/mock";
 import { COUNTRIES } from "@/data/countries";
 import { BODY_TYPES, ETHNICITIES } from "@/data/personalAttributes";
+import { clipboard } from "@/platform/clipboard";
+import { share, canShare } from "@/platform/share";
+import { haptics } from "@/platform/haptics";
 
 const SERVICE_OPTIONS = [
   "Dinner Date", "Travel Companion", "Party Partner", "Social Events",
@@ -645,14 +648,17 @@ const DiscoverPage = () => {
             <button
               onClick={async () => {
                 const url = window.location.href;
-                try {
-                  await navigator.clipboard.writeText(url);
-                  toast.success("Share link copied", { description: "Filters included in the URL" });
-                } catch {
-                  toast.error("Couldn't copy link");
+                haptics.selection();
+                // Prefer the native share sheet on mobile; fall back to clipboard.
+                if (canShare()) {
+                  const result = await share({ title: "DeMeetUP — Discover", url });
+                  if (result.shared) return;
                 }
+                const ok = await clipboard.copy(url);
+                if (ok) toast.success("Share link copied", { description: "Filters included in the URL" });
+                else toast.error("Couldn't copy link");
               }}
-              className="inline-flex items-center gap-1 text-[10px] font-medium text-gold hover:underline px-1.5 py-0.5 rounded-md"
+              className="tap-target press inline-flex items-center gap-1 text-[10px] font-medium text-gold hover:underline px-2 py-1 rounded-md"
             >
               <Link2 className="w-3 h-3" />
               Copy share link

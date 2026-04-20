@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { storage } from "@/platform/storage";
+import { isStandalone as nativeStandalone, isIOS } from "@/platform/env";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -11,7 +13,7 @@ interface BeforeInstallPromptEvent extends Event {
 const PWAInstallBanner = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(() => {
-    const stored = localStorage.getItem("pwa_banner_dismissed");
+    const stored = storage.getSync("pwa_banner_dismissed");
     if (!stored) return false;
     // Re-show after 7 days
     return Date.now() - Number(stored) < 7 * 24 * 60 * 60 * 1000;
@@ -20,7 +22,7 @@ const PWAInstallBanner = () => {
 
   useEffect(() => {
     // Already installed
-    if (window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone) {
+    if (nativeStandalone) {
       setIsStandalone(true);
       return;
     }
@@ -45,13 +47,12 @@ const PWAInstallBanner = () => {
 
   const handleDismiss = () => {
     setDismissed(true);
-    localStorage.setItem("pwa_banner_dismissed", String(Date.now()));
+    void storage.set("pwa_banner_dismissed", String(Date.now()));
   };
 
   // Don't show if already installed, dismissed, or no prompt available
   // On iOS Safari, beforeinstallprompt doesn't fire — show a manual hint
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(navigator as any).standalone;
-  const showBanner = !isStandalone && !dismissed && (deferredPrompt || isIOS);
+  const showBanner = !isStandalone && !dismissed && (deferredPrompt || (isIOS && !nativeStandalone));
 
   if (!showBanner) return null;
 

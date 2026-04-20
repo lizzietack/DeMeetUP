@@ -32,7 +32,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen-d flex items-center justify-center px-4 safe-top safe-bottom">
       <div className="absolute inset-0 bg-gradient-to-b from-purple-glow/10 via-transparent to-transparent" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -83,27 +83,39 @@ const LoginPage = () => {
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="next"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full bg-secondary rounded-xl pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground
-                         focus:outline-none focus:ring-1 focus:ring-gold/50"
+              className="w-full bg-secondary rounded-xl pl-10 pr-4 py-3 text-base text-foreground placeholder:text-muted-foreground
+                         focus:outline-none focus:ring-1 focus:ring-gold/50 selectable"
             />
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              enterKeyHint="go"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full bg-secondary rounded-xl pl-10 pr-10 py-3 text-sm text-foreground placeholder:text-muted-foreground
-                         focus:outline-none focus:ring-1 focus:ring-gold/50"
+              className="w-full bg-secondary rounded-xl pl-10 pr-12 py-3 text-base text-foreground placeholder:text-muted-foreground
+                         focus:outline-none focus:ring-1 focus:ring-gold/50 selectable"
             />
-            <button type="button" onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="absolute right-2 top-1/2 -translate-y-1/2 tap-target inline-flex items-center justify-center text-muted-foreground"
+            >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
