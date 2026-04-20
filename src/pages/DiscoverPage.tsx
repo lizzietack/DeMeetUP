@@ -178,13 +178,30 @@ const DiscoverPage = () => {
       case "rating":
         result.sort((a, b) => b.rating - a.rating);
         break;
+      case "closest": {
+        const myCity = extractCity(profile?.location);
+        const myCountry = (profile as any)?.country || "";
+        const score = (c: Companion) => {
+          const cAny = c as any;
+          if (myCity && extractCity(c.location) === myCity) return 0; // same city
+          if (myCountry && cAny.country === myCountry) return 1; // same country
+          return 2; // elsewhere
+        };
+        result.sort((a, b) => {
+          const d = score(a) - score(b);
+          if (d !== 0) return d;
+          // tiebreaker: newest first
+          return (b.createdAt || "").localeCompare(a.createdAt || "");
+        });
+        break;
+      }
       case "newest":
       default:
         result.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
         break;
     }
     return result;
-  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, verifiedOnly, sortBy]);
+  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, verifiedOnly, sortBy, profile?.location, (profile as any)?.country]);
 
   // Reset visible count when filters/sort change
   useEffect(() => {
