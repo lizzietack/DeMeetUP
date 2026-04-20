@@ -6,6 +6,23 @@ import { lovable } from "@/integrations/lovable/index";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const MIN_PASSWORD_LENGTH = 8;
+
+type StrengthLevel = "weak" | "fair" | "strong";
+
+function getPasswordStrength(pwd: string): { level: StrengthLevel; label: string; color: string } {
+  if (pwd.length === 0) return { level: "weak", label: "", color: "" };
+  let score = 0;
+  if (pwd.length >= MIN_PASSWORD_LENGTH) score++;
+  if (pwd.length >= 12) score++;
+  if (/[A-Z]/.test(pwd)) score++;
+  if (/[0-9]/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+  if (score <= 2) return { level: "weak",   label: "Weak",   color: "bg-red-500"    };
+  if (score <= 3) return { level: "fair",   label: "Fair",   color: "bg-yellow-500" };
+  return             { level: "strong", label: "Strong", color: "bg-green-500"  };
+}
+
 const RegisterPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,23 +30,29 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signUp, user, loading } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const strength = getPasswordStrength(password);
 
   // GuestOnlyRoute handles redirect if already authenticated
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
-      toast({ title: "Password too short", description: "At least 6 characters required", variant: "destructive" });
+    if (isLoading) return;
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      toast({ title: "Password too short", description: `At least ${MIN_PASSWORD_LENGTH} characters required`, variant: "destructive" });
       return;
     }
     setIsLoading(true);
-    const { error } = await signUp(email, password, displayName);
+    const { error, needsEmailConfirmation } = await signUp(email, password, displayName);
     setIsLoading(false);
     if (error) {
       toast({ title: "Registration failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (needsEmailConfirmation) {
+      navigate("/verify-email", { replace: true, state: { email } });
     } else {
       navigate("/onboarding", { replace: true });
       toast({ title: "Account created!", description: "Complete your profile to get started." });
@@ -62,7 +85,8 @@ const RegisterPage = () => {
                 toast({ title: "Google sign-in failed", description: String(result.error), variant: "destructive" });
                 setGoogleLoading(false);
               } else if (!result.redirected) {
-                navigate("/select-role", { replace: true });
+                // New Google user — OnboardingGuard will handle role selection if needed.
+                navigate("/onboarding", { replace: true });
               }
             } catch (err: any) {
               toast({ title: "Google sign-in failed", description: err?.message || "Something went wrong", variant: "destructive" });
@@ -109,10 +133,11 @@ const RegisterPage = () => {
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Password (min 6 chars)"
+              placeholder={`Password (min ${MIN_PASSWORD_LENGTH} chars)`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="new-password"
               className="w-full bg-secondary rounded-xl pl-10 pr-10 py-3 text-sm text-foreground placeholder:text-muted-foreground
                          focus:outline-none focus:ring-1 focus:ring-gold/50"
             />
@@ -121,6 +146,31 @@ const RegisterPage = () => {
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+          {password.length > 0 && (
+            <div className="space-y-1 -mt-2">
+              <div className="flex gap-1 h-1">
+                {(["weak", "fair", "strong"] as StrengthLevel[]).map((lvl, i) => (
+                  <div
+                    key={lvl}
+                    className={`flex-1 rounded-full transition-all duration-300 ${
+                      (strength.level === "weak"   && i === 0) ||
+                      (strength.level === "fair"   && i <= 1) ||
+                      (strength.level === "strong" && i <= 2)
+                        ? strength.color
+                        : "bg-secondary"
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className={`text-xs ${
+                strength.level === "weak"   ? "text-red-400"    :
+                strength.level === "fair"   ? "text-yellow-400" :
+                                              "text-green-400"
+              }`}>
+                {strength.label} password
+              </p>
+            </div>
+          )}
 
           <button
             type="submit"
