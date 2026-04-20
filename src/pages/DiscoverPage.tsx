@@ -86,6 +86,7 @@ const DiscoverPage = () => {
   const [ethnicityFilters, setEthnicityFilters] = useState<string[]>([]);
   const [ageMin, setAgeMin] = useState(18);
   const [ageMax, setAgeMax] = useState(65);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -121,6 +122,7 @@ const DiscoverPage = () => {
       if (bodyTypeFilters.length > 0 && !bodyTypeFilters.includes(cAny.bodyType || "")) return false;
       if (ethnicityFilters.length > 0 && !ethnicityFilters.includes(cAny.ethnicity || "")) return false;
       if (c.age > 0 && (c.age < ageMin || c.age > ageMax)) return false;
+      if (verifiedOnly && !c.verified) return false;
       return true;
     });
 
@@ -141,12 +143,12 @@ const DiscoverPage = () => {
         break;
     }
     return result;
-  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, sortBy]);
+  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, verifiedOnly, sortBy]);
 
   // Reset visible count when filters/sort change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, sortBy]);
+  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, verifiedOnly, sortBy]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -181,7 +183,8 @@ const DiscoverPage = () => {
     (countryFilter ? 1 : 0) +
     bodyTypeFilters.length +
     ethnicityFilters.length +
-    (ageMin > 18 || ageMax < 65 ? 1 : 0);
+    (ageMin > 18 || ageMax < 65 ? 1 : 0) +
+    (verifiedOnly ? 1 : 0);
 
   const clearAllFilters = () => {
     setSelectedServices([]);
@@ -194,6 +197,7 @@ const DiscoverPage = () => {
     setEthnicityFilters([]);
     setAgeMin(18);
     setAgeMax(65);
+    setVerifiedOnly(false);
     setSearchQuery("");
   };
 
@@ -249,7 +253,7 @@ const DiscoverPage = () => {
     return recent;
   }, [companions]);
 
-  const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceMax < 1000 || priceMin > 0 || locationFilter || countryFilter || bodyTypeFilters.length > 0 || ethnicityFilters.length > 0 || ageMin > 18 || ageMax < 65;
+  const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceMax < 1000 || priceMin > 0 || locationFilter || countryFilter || bodyTypeFilters.length > 0 || ethnicityFilters.length > 0 || ageMin > 18 || ageMax < 65 || verifiedOnly;
   const hasLocationSections = !isSearching && (nearYou.length > 0 || newArrivals.length > 0);
   const cityDisplayName = profile?.location?.split(",")[0]?.trim();
 
@@ -309,6 +313,24 @@ const DiscoverPage = () => {
               className="overflow-hidden mb-4"
             >
               <div className="glass rounded-xl p-4 space-y-4">
+                {/* Verified Only Toggle */}
+                <button
+                  onClick={() => setVerifiedOnly((v) => !v)}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors
+                    ${verifiedOnly ? "bg-gold/15 border border-gold/40" : "bg-secondary border border-transparent"}`}
+                >
+                  <span className={`text-xs font-medium ${verifiedOnly ? "text-gold" : "text-muted-foreground"}`}>
+                    ✓ Verified companions only
+                  </span>
+                  <span
+                    className={`relative w-9 h-5 rounded-full transition-colors ${verifiedOnly ? "bg-gold" : "bg-muted"}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 w-4 h-4 bg-background rounded-full transition-transform ${verifiedOnly ? "translate-x-[18px]" : "translate-x-0.5"}`}
+                    />
+                  </span>
+                </button>
+
                 {/* Location Filter */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Location</p>
@@ -528,6 +550,9 @@ const DiscoverPage = () => {
         {/* Active Filter Chips */}
         {activeFilterCount > 0 && !showFilters && (
           <div className="flex flex-wrap gap-1.5 mb-3">
+            {verifiedOnly && (
+              <FilterChip label="✓ Verified" onRemove={() => setVerifiedOnly(false)} />
+            )}
             {locationFilter && (
               <FilterChip label={`📍 ${locationFilter}`} onRemove={() => setLocationFilter("")} />
             )}

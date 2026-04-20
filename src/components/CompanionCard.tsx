@@ -6,7 +6,7 @@ import { useSavedCompanionIds, useToggleSaveCompanion } from "@/hooks/use-saved-
 import { useAuth } from "@/contexts/AuthContext";
 
 interface CompanionCardProps {
-  companion: Companion;
+  companion: Companion & { bodyType?: string; ethnicity?: string };
   index?: number;
 }
 
@@ -85,10 +85,25 @@ const CompanionCard = ({ companion, index = 0 }: CompanionCardProps) => {
           </div>
         </div>
 
-        {/* Service tags */}
+        {/* Attribute & service tags */}
         <div className="p-3 pt-2 flex flex-wrap gap-1.5">
-          {companion.services.slice(0, 3).map((service) => (
-            <span key={service} className="text-xs px-2.5 py-1 rounded-full bg-secondary text-muted-foreground">
+          {companion.age > 0 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/10 text-gold border border-gold/20 font-medium">
+              {companion.age}y
+            </span>
+          )}
+          {companion.bodyType && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-medium">
+              {companion.bodyType}
+            </span>
+          )}
+          {companion.ethnicity && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">
+              {companion.ethnicity}
+            </span>
+          )}
+          {companion.services.slice(0, 2).map((service) => (
+            <span key={service} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
               {service}
             </span>
           ))}
