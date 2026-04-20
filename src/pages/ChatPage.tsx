@@ -273,12 +273,17 @@ const ChatPage = () => {
                 className={`flex ${isMe ? "justify-end" : "justify-start"} group/msg`}
               >
                 <div className="relative max-w-[75%]">
-                  {/* Reaction trigger on hover */}
+                  {/*
+                    Reaction trigger: visible on hover (desktop) AND
+                    accessible on mobile via long-press (handled by
+                    onContextMenu below on the bubble).
+                  */}
                   <button
                     onClick={() => setActiveReactionMsgId(activeReactionMsgId === msg.id ? null : msg.id)}
-                    className={`absolute top-1 ${isMe ? "-left-8" : "-right-8"} w-6 h-6 rounded-full bg-secondary/80 border border-border/30 items-center justify-center opacity-0 group-hover/msg:opacity-100 transition-opacity hidden sm:flex`}
+                    aria-label="Add reaction"
+                    className={`absolute top-1 ${isMe ? "-left-8" : "-right-8"} w-7 h-7 rounded-full bg-secondary/80 border border-border/30 items-center justify-center opacity-0 group-hover/msg:opacity-100 transition-opacity hidden sm:flex`}
                   >
-                    <SmilePlus className="w-3 h-3 text-muted-foreground" />
+                    <SmilePlus className="w-3.5 h-3.5 text-muted-foreground" />
                   </button>
 
                   <div
@@ -290,6 +295,13 @@ const ChatPage = () => {
                           : "glass rounded-bl-sm"
                     }`}
                     onDoubleClick={() => setActiveReactionMsgId(activeReactionMsgId === msg.id ? null : msg.id)}
+                    onContextMenu={(e) => {
+                      // Long-press on touch devices fires a contextmenu — use it
+                      // for the reaction picker since hover doesn't exist on touch.
+                      e.preventDefault();
+                      haptics.impact("medium");
+                      setActiveReactionMsgId(activeReactionMsgId === msg.id ? null : msg.id);
+                    }}
                   >
                     {isTip && (
                       <div className="flex items-center gap-1.5 mb-1">
