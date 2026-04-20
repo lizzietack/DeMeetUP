@@ -1,11 +1,13 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X, ArrowUpDown, ChevronDown } from "lucide-react";
+import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X, ArrowUpDown, ChevronDown, Globe } from "lucide-react";
 import CompanionCard from "@/components/CompanionCard";
 import { useCompanions } from "@/hooks/use-companions";
 import { useRecommendations } from "@/hooks/use-recommendations";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Companion } from "@/data/mock";
+import { COUNTRIES } from "@/data/countries";
+import { BODY_TYPES, ETHNICITIES } from "@/data/personalAttributes";
 
 const SERVICE_OPTIONS = [
   "Dinner Date", "Travel Companion", "Party Partner", "Social Events",
@@ -79,6 +81,9 @@ const DiscoverPage = () => {
   const [priceMax, setPriceMax] = useState(1000);
   const [selectedGender, setSelectedGender] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState("");
+  const [countryFilter, setCountryFilter] = useState("");
+  const [bodyTypeFilter, setBodyTypeFilter] = useState("");
+  const [ethnicityFilter, setEthnicityFilter] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -102,6 +107,7 @@ const DiscoverPage = () => {
 
   const filtered = useMemo(() => {
     let result = companions.filter((c) => {
+      const cAny = c as any;
       if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
           !c.location.toLowerCase().includes(searchQuery.toLowerCase()) &&
           !c.services.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))) return false;
@@ -109,6 +115,9 @@ const DiscoverPage = () => {
       if (c.hourlyRate < priceMin || c.hourlyRate > priceMax) return false;
       if (selectedGender !== "all" && c.gender !== selectedGender) return false;
       if (locationFilter && !c.location.toLowerCase().includes(locationFilter.toLowerCase())) return false;
+      if (countryFilter && (cAny.country || "") !== countryFilter) return false;
+      if (bodyTypeFilter && (cAny.bodyType || "") !== bodyTypeFilter) return false;
+      if (ethnicityFilter && (cAny.ethnicity || "") !== ethnicityFilter) return false;
       return true;
     });
 
@@ -129,12 +138,12 @@ const DiscoverPage = () => {
         break;
     }
     return result;
-  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, sortBy]);
+  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilter, ethnicityFilter, sortBy]);
 
   // Reset visible count when filters/sort change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, sortBy]);
+  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilter, ethnicityFilter, sortBy]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -165,7 +174,10 @@ const DiscoverPage = () => {
     (selectedGender !== "all" ? 1 : 0) +
     (priceMin > 0 ? 1 : 0) +
     (priceMax < 1000 ? 1 : 0) +
-    (locationFilter ? 1 : 0);
+    (locationFilter ? 1 : 0) +
+    (countryFilter ? 1 : 0) +
+    (bodyTypeFilter ? 1 : 0) +
+    (ethnicityFilter ? 1 : 0);
 
   const clearAllFilters = () => {
     setSelectedServices([]);
@@ -173,6 +185,9 @@ const DiscoverPage = () => {
     setPriceMin(0);
     setPriceMax(1000);
     setLocationFilter("");
+    setCountryFilter("");
+    setBodyTypeFilter("");
+    setEthnicityFilter("");
     setSearchQuery("");
   };
 
