@@ -483,6 +483,15 @@ const DiscoverPage = () => {
             {locationFilter && (
               <FilterChip label={`📍 ${locationFilter}`} onRemove={() => setLocationFilter("")} />
             )}
+            {countryFilter && (
+              <FilterChip label={`🌍 ${countryFilter}`} onRemove={() => setCountryFilter("")} />
+            )}
+            {bodyTypeFilter && (
+              <FilterChip label={bodyTypeFilter} onRemove={() => setBodyTypeFilter("")} />
+            )}
+            {ethnicityFilter && (
+              <FilterChip label={ethnicityFilter} onRemove={() => setEthnicityFilter("")} />
+            )}
             {selectedGender !== "all" && (
               <FilterChip label={selectedGender} onRemove={() => setSelectedGender("all")} />
             )}
