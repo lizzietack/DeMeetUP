@@ -43,7 +43,7 @@ const AgeVerification = ({ onVerified }: AgeVerificationProps) => {
                 <ShieldCheck className="w-8 h-8 text-primary-foreground" />
               </div>
               <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-                Velvet Circle
+                DeMeetUP
               </h1>
               <p className="text-gold text-sm tracking-widest uppercase mb-6">
                 Exclusive Social Discovery
