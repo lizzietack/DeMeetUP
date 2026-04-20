@@ -4,7 +4,7 @@ import {
   ArrowLeft, Send, Image, MoreVertical, Check, CheckCheck,
   DollarSign, Sparkles, ShieldBan, Flag, Mic,
 } from "lucide-react";
-import { useState, useRef, useEffect, useCallback, ChangeEvent } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -22,6 +22,11 @@ import AudioMessage from "@/components/chat/AudioMessage";
 import { MessageReactions, QUICK_EMOJIS } from "@/components/chat/MessageReactions";
 import { useReactions, useToggleReaction } from "@/hooks/use-reactions";
 import { SmilePlus } from "lucide-react";
+import { useUploadToBucket } from "@/features/media/use-upload-to-bucket";
+import MediaPickerButton from "@/features/media/MediaPickerButton";
+import IconButton from "@/components/mobile/IconButton";
+import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
+import { haptics } from "@/platform/haptics";
 
 const ChatPage = () => {
   const { id: conversationId } = useParams();
@@ -31,13 +36,13 @@ const ChatPage = () => {
   const [showTipModal, setShowTipModal] = useState(false);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [isRecordingMode, setIsRecordingMode] = useState(false);
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const keyboardInset = useKeyboardInset();
 
   const { data: messages = [], isLoading } = useMessages(conversationId);
   const sendMessage = useSendMessage();
@@ -47,6 +52,7 @@ const ChatPage = () => {
   const { data: blockedUsers = [] } = useBlockedUsers();
   const { data: reactionsMap = {} } = useReactions(conversationId);
   const toggleReaction = useToggleReaction(conversationId);
+  const { upload, isUploading } = useUploadToBucket();
 
   // Get conversation info (other user)
   const { data: convInfo } = useQuery({
@@ -92,7 +98,10 @@ const ChatPage = () => {
   };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Use auto on first paint, smooth after — feels much faster on mobile.
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: messages.length > 1 ? "smooth" : "auto" });
   }, [messages, isOtherTyping]);
 
   const handleTyping = useCallback(() => {
@@ -104,6 +113,7 @@ const ChatPage = () => {
 
   const handleSend = () => {
     if (!message.trim() || !conversationId) return;
+    haptics.impact("light");
     sendMessage.mutate({ conversationId, content: message.trim() });
     setMessage("");
     setTyping(null);
@@ -120,72 +130,38 @@ const ChatPage = () => {
     });
   };
 
-  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !conversationId || !user) return;
-
+  const handleImagePicked = async (file: File) => {
+    if (!conversationId || !user) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Only image files are allowed");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB");
-      return;
-    }
-
-    setIsUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${user.id}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("chat-images")
-        .upload(path, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("chat-images")
-        .getPublicUrl(path);
-
+      const result = await upload("chat-images", user.id, file);
       sendMessage.mutate({
         conversationId,
-        content: urlData.publicUrl,
+        content: result.publicUrl,
         messageType: "image",
-        metadata: { fileName: file.name, fileSize: file.size },
+        metadata: { fileName: result.fileName, fileSize: result.fileSize },
       });
     } catch {
       toast.error("Failed to upload image");
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
   const handleSendVoiceNote = async (blob: Blob, durationSec: number) => {
     if (!conversationId || !user) return;
-    setIsUploading(true);
     try {
-      const path = `${user.id}/${Date.now()}.webm`;
-      const { error: uploadError } = await supabase.storage
-        .from("voice-notes")
-        .upload(path, blob);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("voice-notes")
-        .getPublicUrl(path);
-
+      const result = await upload("voice-notes", user.id, blob, { extension: "webm" });
       sendMessage.mutate({
         conversationId,
-        content: urlData.publicUrl,
+        content: result.publicUrl,
         messageType: "voice",
         metadata: { duration: durationSec },
       });
     } catch {
       toast.error("Failed to send voice note");
     } finally {
-      setIsUploading(false);
       setIsRecordingMode(false);
     }
   };
