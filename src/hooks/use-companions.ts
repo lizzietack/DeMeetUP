@@ -26,7 +26,19 @@ interface DbCompanionProfile {
     trust_score: number;
     body_type: string | null;
     ethnicity: string | null;
+    date_of_birth: string | null;
   };
+}
+
+function calculateAge(dob: string | null): number {
+  if (!dob) return 0;
+  const birth = new Date(dob);
+  if (isNaN(birth.getTime())) return 0;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
 }
 
 export interface CompanionWithVerification extends Companion {
@@ -51,7 +63,7 @@ function mapToCompanion(row: DbCompanionProfile): CompanionWithVerification {
     userId: row.user_id,
     createdAt: row.created_at,
     name: row.profiles?.display_name || "Anonymous",
-    age: 0,
+    age: calculateAge(row.profiles?.date_of_birth),
     location: row.profiles?.location || "Unknown",
     country: row.profiles?.country || undefined,
     currency: row.profiles?.currency || countryCurrency?.currency || undefined,
@@ -78,7 +90,7 @@ function mapToCompanion(row: DbCompanionProfile): CompanionWithVerification {
 const PROFILE_SELECT = `
   *,
   companion_images (image_url, position),
-  profiles!companion_profiles_user_id_fkey (display_name, avatar_url, bio, location, country, currency, photo_verified, selfie_verified, trust_score, body_type, ethnicity)
+  profiles!companion_profiles_user_id_fkey (display_name, avatar_url, bio, location, country, currency, photo_verified, selfie_verified, trust_score, body_type, ethnicity, date_of_birth)
 `;
 
 export function useCompanions() {
