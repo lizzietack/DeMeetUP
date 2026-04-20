@@ -253,7 +253,7 @@ const DiscoverPage = () => {
     return recent;
   }, [companions]);
 
-  const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceMax < 1000 || priceMin > 0 || locationFilter || countryFilter || bodyTypeFilters.length > 0 || ethnicityFilters.length > 0 || ageMin > 18 || ageMax < 65;
+  const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceMax < 1000 || priceMin > 0 || locationFilter || countryFilter || bodyTypeFilters.length > 0 || ethnicityFilters.length > 0 || ageMin > 18 || ageMax < 65 || verifiedOnly;
   const hasLocationSections = !isSearching && (nearYou.length > 0 || newArrivals.length > 0);
   const cityDisplayName = profile?.location?.split(",")[0]?.trim();
 
