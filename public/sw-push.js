@@ -1,6 +1,6 @@
 // Service worker push event listener (injected via custom SW)
 self.addEventListener('push', (event) => {
-  let data = { title: 'Velvet Circle', body: 'You have a new notification', url: '/' };
+  let data = { title: 'DeMeetUP', body: 'You have a new notification', url: '/' };
 
   try {
     if (event.data) {

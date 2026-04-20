@@ -27,8 +27,8 @@ export default defineConfig(({ mode }) => ({
       },
       includeAssets: ["pwa-icon-192.png", "pwa-icon-512.png"],
       manifest: {
-        name: "Velvet Circle — Premium Social Discovery",
-        short_name: "Velvet Circle",
+        name: "DeMeetUP — Premium Social Discovery",
+        short_name: "DeMeetUP",
         description: "Exclusive 18+ social discovery platform for premium companionship experiences.",
         theme_color: "#0c0a14",
         background_color: "#0c0a14",
