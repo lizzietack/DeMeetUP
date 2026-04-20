@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Send, Image, MoreVertical,
-  DollarSign, Sparkles, ShieldBan, Flag, Mic,
+  DollarSign, ShieldBan, Flag, Mic,
 } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
