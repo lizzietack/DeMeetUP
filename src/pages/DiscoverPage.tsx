@@ -238,7 +238,7 @@ const DiscoverPage = () => {
     return recent;
   }, [companions]);
 
-  const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceMax < 1000 || priceMin > 0 || locationFilter;
+  const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceMax < 1000 || priceMin > 0 || locationFilter || countryFilter || bodyTypeFilter || ethnicityFilter;
   const hasLocationSections = !isSearching && (nearYou.length > 0 || newArrivals.length > 0);
   const cityDisplayName = profile?.location?.split(",")[0]?.trim();
 
