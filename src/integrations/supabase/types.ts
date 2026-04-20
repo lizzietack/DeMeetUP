@@ -322,11 +322,13 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          body_type: string | null
           country: string | null
           created_at: string
           currency: string | null
           date_of_birth: string | null
           display_name: string | null
+          ethnicity: string | null
           flagged_for_review: boolean
           id: string
           location: string | null
@@ -343,11 +345,13 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          body_type?: string | null
           country?: string | null
           created_at?: string
           currency?: string | null
           date_of_birth?: string | null
           display_name?: string | null
+          ethnicity?: string | null
           flagged_for_review?: boolean
           id?: string
           location?: string | null
@@ -364,11 +368,13 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          body_type?: string | null
           country?: string | null
           created_at?: string
           currency?: string | null
           date_of_birth?: string | null
           display_name?: string | null
+          ethnicity?: string | null
           flagged_for_review?: boolean
           id?: string
           location?: string | null

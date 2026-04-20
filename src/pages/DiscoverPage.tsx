@@ -1,11 +1,13 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X, ArrowUpDown, ChevronDown } from "lucide-react";
+import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X, ArrowUpDown, ChevronDown, Globe } from "lucide-react";
 import CompanionCard from "@/components/CompanionCard";
 import { useCompanions } from "@/hooks/use-companions";
 import { useRecommendations } from "@/hooks/use-recommendations";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Companion } from "@/data/mock";
+import { COUNTRIES } from "@/data/countries";
+import { BODY_TYPES, ETHNICITIES } from "@/data/personalAttributes";
 
 const SERVICE_OPTIONS = [
   "Dinner Date", "Travel Companion", "Party Partner", "Social Events",
@@ -79,6 +81,9 @@ const DiscoverPage = () => {
   const [priceMax, setPriceMax] = useState(1000);
   const [selectedGender, setSelectedGender] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState("");
+  const [countryFilter, setCountryFilter] = useState("");
+  const [bodyTypeFilter, setBodyTypeFilter] = useState("");
+  const [ethnicityFilter, setEthnicityFilter] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -102,6 +107,7 @@ const DiscoverPage = () => {
 
   const filtered = useMemo(() => {
     let result = companions.filter((c) => {
+      const cAny = c as any;
       if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
           !c.location.toLowerCase().includes(searchQuery.toLowerCase()) &&
           !c.services.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))) return false;
@@ -109,6 +115,9 @@ const DiscoverPage = () => {
       if (c.hourlyRate < priceMin || c.hourlyRate > priceMax) return false;
       if (selectedGender !== "all" && c.gender !== selectedGender) return false;
       if (locationFilter && !c.location.toLowerCase().includes(locationFilter.toLowerCase())) return false;
+      if (countryFilter && (cAny.country || "") !== countryFilter) return false;
+      if (bodyTypeFilter && (cAny.bodyType || "") !== bodyTypeFilter) return false;
+      if (ethnicityFilter && (cAny.ethnicity || "") !== ethnicityFilter) return false;
       return true;
     });
 
@@ -129,12 +138,12 @@ const DiscoverPage = () => {
         break;
     }
     return result;
-  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, sortBy]);
+  }, [companions, searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilter, ethnicityFilter, sortBy]);
 
   // Reset visible count when filters/sort change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, sortBy]);
+  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilter, ethnicityFilter, sortBy]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -165,7 +174,10 @@ const DiscoverPage = () => {
     (selectedGender !== "all" ? 1 : 0) +
     (priceMin > 0 ? 1 : 0) +
     (priceMax < 1000 ? 1 : 0) +
-    (locationFilter ? 1 : 0);
+    (locationFilter ? 1 : 0) +
+    (countryFilter ? 1 : 0) +
+    (bodyTypeFilter ? 1 : 0) +
+    (ethnicityFilter ? 1 : 0);
 
   const clearAllFilters = () => {
     setSelectedServices([]);
@@ -173,6 +185,9 @@ const DiscoverPage = () => {
     setPriceMin(0);
     setPriceMax(1000);
     setLocationFilter("");
+    setCountryFilter("");
+    setBodyTypeFilter("");
+    setEthnicityFilter("");
     setSearchQuery("");
   };
 
@@ -223,7 +238,7 @@ const DiscoverPage = () => {
     return recent;
   }, [companions]);
 
-  const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceMax < 1000 || priceMin > 0 || locationFilter;
+  const isSearching = searchQuery || selectedServices.length > 0 || selectedGender !== "all" || priceMax < 1000 || priceMin > 0 || locationFilter || countryFilter || bodyTypeFilter || ethnicityFilter;
   const hasLocationSections = !isSearching && (nearYou.length > 0 || newArrivals.length > 0);
   const cityDisplayName = profile?.location?.split(",")[0]?.trim();
 
@@ -321,7 +336,63 @@ const DiscoverPage = () => {
                   )}
                 </div>
 
-                {/* Gender */}
+                {/* Country */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Country</p>
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                    <select
+                      value={countryFilter}
+                      onChange={(e) => setCountryFilter(e.target.value)}
+                      className="w-full bg-secondary rounded-lg pl-9 pr-8 py-2 text-xs text-foreground appearance-none focus:outline-none focus:ring-1 focus:ring-gold/50"
+                    >
+                      <option value="">All countries</option>
+                      {COUNTRIES.map((c) => (
+                        <option key={c.code} value={c.country}>{c.country}</option>
+                      ))}
+                    </select>
+                    {countryFilter && (
+                      <button onClick={() => setCountryFilter("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Body Type */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Body Type</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {BODY_TYPES.map((b) => (
+                      <button
+                        key={b}
+                        onClick={() => setBodyTypeFilter(bodyTypeFilter === b ? "" : b)}
+                        className={`px-2.5 py-1 rounded-full text-xs transition-colors
+                          ${bodyTypeFilter === b ? "gradient-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+                      >
+                        {b}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Ethnicity */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Ethnicity</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ETHNICITIES.map((e) => (
+                      <button
+                        key={e}
+                        onClick={() => setEthnicityFilter(ethnicityFilter === e ? "" : e)}
+                        className={`px-2.5 py-1 rounded-full text-xs transition-colors
+                          ${ethnicityFilter === e ? "gradient-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Gender</p>
                   <div className="flex gap-2">
@@ -411,6 +482,15 @@ const DiscoverPage = () => {
           <div className="flex flex-wrap gap-1.5 mb-3">
             {locationFilter && (
               <FilterChip label={`📍 ${locationFilter}`} onRemove={() => setLocationFilter("")} />
+            )}
+            {countryFilter && (
+              <FilterChip label={`🌍 ${countryFilter}`} onRemove={() => setCountryFilter("")} />
+            )}
+            {bodyTypeFilter && (
+              <FilterChip label={bodyTypeFilter} onRemove={() => setBodyTypeFilter("")} />
+            )}
+            {ethnicityFilter && (
+              <FilterChip label={ethnicityFilter} onRemove={() => setEthnicityFilter("")} />
             )}
             {selectedGender !== "all" && (
               <FilterChip label={selectedGender} onRemove={() => setSelectedGender("all")} />
