@@ -550,6 +550,9 @@ const DiscoverPage = () => {
         {/* Active Filter Chips */}
         {activeFilterCount > 0 && !showFilters && (
           <div className="flex flex-wrap gap-1.5 mb-3">
+            {verifiedOnly && (
+              <FilterChip label="✓ Verified" onRemove={() => setVerifiedOnly(false)} />
+            )}
             {locationFilter && (
               <FilterChip label={`📍 ${locationFilter}`} onRemove={() => setLocationFilter("")} />
             )}
