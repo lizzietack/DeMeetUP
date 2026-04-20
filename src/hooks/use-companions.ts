@@ -24,6 +24,8 @@ interface DbCompanionProfile {
     photo_verified: boolean;
     selfie_verified: boolean;
     trust_score: number;
+    body_type: string | null;
+    ethnicity: string | null;
   };
 }
 
@@ -31,6 +33,8 @@ export interface CompanionWithVerification extends Companion {
   photoVerified?: boolean;
   selfieVerified?: boolean;
   trustScore?: number;
+  bodyType?: string;
+  ethnicity?: string;
 }
 
 function mapToCompanion(row: DbCompanionProfile): CompanionWithVerification {
@@ -66,13 +70,15 @@ function mapToCompanion(row: DbCompanionProfile): CompanionWithVerification {
     photoVerified: row.profiles?.photo_verified || false,
     selfieVerified: row.profiles?.selfie_verified || false,
     trustScore: row.profiles?.trust_score || 0,
+    bodyType: row.profiles?.body_type || undefined,
+    ethnicity: row.profiles?.ethnicity || undefined,
   };
 }
 
 const PROFILE_SELECT = `
   *,
   companion_images (image_url, position),
-  profiles!companion_profiles_user_id_fkey (display_name, avatar_url, bio, location, country, currency, photo_verified, selfie_verified, trust_score)
+  profiles!companion_profiles_user_id_fkey (display_name, avatar_url, bio, location, country, currency, photo_verified, selfie_verified, trust_score, body_type, ethnicity)
 `;
 
 export function useCompanions() {
