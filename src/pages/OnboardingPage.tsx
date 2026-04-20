@@ -12,6 +12,7 @@ import {
   Calendar, FileText, Image, Eye, Loader2, Globe
 } from "lucide-react";
 import { COUNTRIES, getCountryCurrency } from "@/data/countries";
+import { BODY_TYPES, ETHNICITIES } from "@/data/personalAttributes";
 
 const SERVICE_OPTIONS = [
   "Girlfriend Experience", "Hookup / Meetup", "Short Time", "Overnight Stay",
@@ -56,6 +57,8 @@ const OnboardingPage = () => {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [country, setCountry] = useState("");
   const [location, setLocation] = useState("");
+  const [bodyType, setBodyType] = useState("");
+  const [ethnicity, setEthnicity] = useState("");
 
   const selectedCurrency = getCountryCurrency(country);
   const currencySymbol = selectedCurrency?.currencySymbol || "$";
@@ -84,6 +87,8 @@ const OnboardingPage = () => {
     setCountry(profile.country || "");
     setRole((profile.role as "guest" | "companion") || "guest");
     setDateOfBirth(profile.date_of_birth || "");
+    setBodyType((profile as any).body_type || "");
+    setEthnicity((profile as any).ethnicity || "");
 
     if (profile.avatar_url) {
       setProfileImage({
@@ -283,6 +288,8 @@ const OnboardingPage = () => {
         role,
         date_of_birth: dateOfBirth || null,
         avatar_url: profileImage?.url || null,
+        body_type: bodyType || null,
+        ethnicity: ethnicity || null,
         profile_completed: true,
       };
 
@@ -511,6 +518,44 @@ const OnboardingPage = () => {
                     maxLength={100}
                     className="w-full bg-secondary rounded-xl pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold/50"
                   />
+                </div>
+              </div>
+
+              {/* Body Type */}
+              <div>
+                <label className="text-sm text-muted-foreground mb-1.5 block">Body Type <span className="text-[10px] opacity-60">(optional)</span></label>
+                <div className="flex flex-wrap gap-1.5">
+                  {BODY_TYPES.map((b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => setBodyType(bodyType === b ? "" : b)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        bodyType === b ? "gradient-gold text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {b}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Ethnicity */}
+              <div>
+                <label className="text-sm text-muted-foreground mb-1.5 block">Ethnicity <span className="text-[10px] opacity-60">(optional)</span></label>
+                <div className="flex flex-wrap gap-1.5">
+                  {ETHNICITIES.map((e) => (
+                    <button
+                      key={e}
+                      type="button"
+                      onClick={() => setEthnicity(ethnicity === e ? "" : e)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        ethnicity === e ? "gradient-gold text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {e}
+                    </button>
+                  ))}
                 </div>
               </div>
 
