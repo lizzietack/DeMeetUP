@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Eye, EyeOff, Check } from "lucide-react";
+import { Lock, Eye, EyeOff, Check, AlertTriangle, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const ResetPasswordPage = () => {
@@ -12,16 +12,39 @@ const ResetPasswordPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
   const [done, setDone] = useState(false);
+  const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Listen for the PASSWORD_RECOVERY event from the URL hash
+    // A valid recovery link puts tokens in the URL hash (#access_token=...&type=recovery)
+    // or query (?code=...). If neither is present, this is not a valid recovery flow.
+    const hash = window.location.hash || "";
+    const search = window.location.search || "";
+    const hasRecoveryHash = hash.includes("type=recovery") || hash.includes("access_token");
+    const hasRecoveryCode = new URLSearchParams(search).has("code");
+    const hasRecoveryParams = hasRecoveryHash || hasRecoveryCode;
+
+    // Listen for the PASSWORD_RECOVERY event fired after Supabase parses the hash
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setIsRecovery(true);
+        setChecking(false);
       }
     });
+
+    if (!hasRecoveryParams) {
+      // No recovery token in the URL — invalid entry point.
+      setChecking(false);
+    } else {
+      // Give Supabase a brief window to parse the URL and emit PASSWORD_RECOVERY.
+      const t = setTimeout(() => setChecking(false), 1500);
+      return () => {
+        clearTimeout(t);
+        subscription.unsubscribe();
+      };
+    }
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -54,7 +77,33 @@ const ResetPasswordPage = () => {
         animate={{ opacity: 1, y: 0 }}
         className="glass-strong rounded-2xl p-8 max-w-sm w-full relative"
       >
-        {done ? (
+        {checking ? (
+          <div className="text-center py-6">
+            <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-muted-foreground text-sm mt-4">Verifying reset link...</p>
+          </div>
+        ) : !isRecovery ? (
+          <div className="text-center">
+            <div className="w-14 h-14 bg-destructive/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-7 h-7 text-destructive" />
+            </div>
+            <h1 className="font-display text-2xl font-bold text-foreground mb-2">Invalid or Expired Link</h1>
+            <p className="text-muted-foreground text-sm mb-6">
+              This password reset link is invalid or has expired. Please request a new one.
+            </p>
+            <Link
+              to="/forgot-password"
+              className="inline-block gradient-gold text-primary-foreground font-display font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-all glow-gold"
+            >
+              Request New Link
+            </Link>
+            <div className="mt-4">
+              <Link to="/login" className="text-gold text-sm hover:underline inline-flex items-center gap-1">
+                <ArrowLeft className="w-4 h-4" /> Back to login
+              </Link>
+            </div>
+          </div>
+        ) : done ? (
           <div className="text-center">
             <div className="w-14 h-14 gradient-gold rounded-full flex items-center justify-center mx-auto mb-4">
               <Check className="w-7 h-7 text-primary-foreground" />
