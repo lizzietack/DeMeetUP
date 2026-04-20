@@ -18,6 +18,8 @@ import LoginPage from "./pages/LoginPage.tsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.tsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
 import RegisterPage from "./pages/RegisterPage.tsx";
+import AuthCallbackPage from "./pages/AuthCallbackPage.tsx";
+import VerifyEmailPage from "./pages/VerifyEmailPage.tsx";
 import SelectRolePage from "./pages/SelectRolePage.tsx";
 import CompanionSetupPage from "./pages/CompanionSetupPage.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
@@ -67,6 +69,8 @@ const AppContent = () => {
       <Sonner />
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/verify-email" element={<GuestOnlyRoute><VerifyEmailPage /></GuestOnlyRoute>} />
         <Route path="/login" element={<GuestOnlyRoute><LoginPage /></GuestOnlyRoute>} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
