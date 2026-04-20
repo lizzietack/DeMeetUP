@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X, ArrowUpDown, ChevronDown, Globe } from "lucide-react";
 import CompanionCard from "@/components/CompanionCard";
@@ -74,23 +75,62 @@ const DiscoverPage = () => {
   const { data: companions = [], isLoading } = useCompanions();
   const { user, profile } = useAuth();
   const { data: recommendations, isLoading: recsLoading } = useRecommendations();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Init from URL (lazy — only on first render)
+  const initial = useRef({
+    q: searchParams.get("q") || "",
+    services: searchParams.get("services")?.split(",").filter(Boolean) || [],
+    priceMin: Number(searchParams.get("priceMin")) || 0,
+    priceMax: Number(searchParams.get("priceMax")) || 1000,
+    gender: searchParams.get("gender") || "all",
+    location: searchParams.get("location") || "",
+    country: searchParams.get("country") || "",
+    bodyTypes: searchParams.get("bodyTypes")?.split(",").filter(Boolean) || [],
+    ethnicities: searchParams.get("ethnicities")?.split(",").filter(Boolean) || [],
+    ageMin: Number(searchParams.get("ageMin")) || 18,
+    ageMax: Number(searchParams.get("ageMax")) || 65,
+    verified: searchParams.get("verified") === "1",
+    sort: (searchParams.get("sort") as SortOption) || "newest",
+  }).current;
+
+  const [searchQuery, setSearchQuery] = useState(initial.q);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [priceMin, setPriceMin] = useState(0);
-  const [priceMax, setPriceMax] = useState(1000);
-  const [selectedGender, setSelectedGender] = useState<string>("all");
-  const [locationFilter, setLocationFilter] = useState("");
-  const [countryFilter, setCountryFilter] = useState("");
-  const [bodyTypeFilters, setBodyTypeFilters] = useState<string[]>([]);
-  const [ethnicityFilters, setEthnicityFilters] = useState<string[]>([]);
-  const [ageMin, setAgeMin] = useState(18);
-  const [ageMax, setAgeMax] = useState(65);
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [selectedServices, setSelectedServices] = useState<string[]>(initial.services);
+  const [priceMin, setPriceMin] = useState(initial.priceMin);
+  const [priceMax, setPriceMax] = useState(initial.priceMax);
+  const [selectedGender, setSelectedGender] = useState<string>(initial.gender);
+  const [locationFilter, setLocationFilter] = useState(initial.location);
+  const [countryFilter, setCountryFilter] = useState(initial.country);
+  const [bodyTypeFilters, setBodyTypeFilters] = useState<string[]>(initial.bodyTypes);
+  const [ethnicityFilters, setEthnicityFilters] = useState<string[]>(initial.ethnicities);
+  const [ageMin, setAgeMin] = useState(initial.ageMin);
+  const [ageMax, setAgeMax] = useState(initial.ageMax);
+  const [verifiedOnly, setVerifiedOnly] = useState(initial.verified);
+  const [sortBy, setSortBy] = useState<SortOption>(initial.sort);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Sync filters → URL (debounced via microtask on each change)
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set("q", searchQuery);
+    if (selectedServices.length) params.set("services", selectedServices.join(","));
+    if (priceMin > 0) params.set("priceMin", String(priceMin));
+    if (priceMax < 1000) params.set("priceMax", String(priceMax));
+    if (selectedGender !== "all") params.set("gender", selectedGender);
+    if (locationFilter) params.set("location", locationFilter);
+    if (countryFilter) params.set("country", countryFilter);
+    if (bodyTypeFilters.length) params.set("bodyTypes", bodyTypeFilters.join(","));
+    if (ethnicityFilters.length) params.set("ethnicities", ethnicityFilters.join(","));
+    if (ageMin > 18) params.set("ageMin", String(ageMin));
+    if (ageMax < 65) params.set("ageMax", String(ageMax));
+    if (verifiedOnly) params.set("verified", "1");
+    if (sortBy !== "newest") params.set("sort", sortBy);
+    setSearchParams(params, { replace: true });
+  }, [searchQuery, selectedServices, priceMin, priceMax, selectedGender, locationFilter, countryFilter, bodyTypeFilters, ethnicityFilters, ageMin, ageMax, verifiedOnly, sortBy, setSearchParams]);
+
 
   // Unique locations for suggestions
   const uniqueLocations = useMemo(() => {
