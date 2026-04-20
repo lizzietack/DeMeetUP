@@ -62,6 +62,7 @@ export function useMyBookings() {
             companion_images (image_url, position)
           )
         `)
+        .eq("guest_id", user!.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -73,10 +74,14 @@ export function useMyBookings() {
   useEffect(() => {
     if (!user) return;
     const channel = supabase
-      .channel("bookings-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["bookings", user.id] });
-      })
+      .channel(`bookings-realtime-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings", filter: `guest_id=eq.${user.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["bookings", user.id] });
+        }
+      )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user, queryClient]);
@@ -141,6 +146,9 @@ export function useUpdateBookingStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings", user?.id] });
+    },
+    onError: (error: any) => {
+      console.error("[useUpdateBookingStatus] Failed to update booking:", error);
     },
   });
 }

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-const VAPID_PUBLIC_KEY = "BNuq5x-F1DxrpZK1KyWp11R0nBWGQCxFU01SMipORokbgef3IHFwPJpSNzaFfTt0COax1C9TpeOwlvM0r0V4DGM";
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string;
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -37,6 +37,11 @@ export const usePushNotifications = () => {
   const subscribe = useCallback(async () => {
     if (!user || !("serviceWorker" in navigator) || !("PushManager" in window)) {
       toast.error("Push notifications are not supported in this browser");
+      return false;
+    }
+    if (!VAPID_PUBLIC_KEY) {
+      console.error("VITE_VAPID_PUBLIC_KEY is not set");
+      toast.error("Push notifications are not configured");
       return false;
     }
 
