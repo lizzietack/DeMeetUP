@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { onPageEnter } from "@/platform/lifecycle";
 
 type PlatformRole = Database["public"]["Enums"]["platform_role"];
 
@@ -92,22 +93,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
 
-    // Re-validate session when tab becomes visible again
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        supabase.auth.getSession().then(({ data: { session: freshSession } }) => {
-          if (freshSession) {
-            setSession(freshSession);
-            setUser(freshSession.user);
-          }
-        });
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    // Re-validate session whenever the app returns to foreground.
+    // Uses the platform lifecycle helper, which is reliable on iOS,
+    // Android, and inside Capacitor's WKWebView.
+    const offEnter = onPageEnter(() => {
+      supabase.auth.getSession().then(({ data: { session: freshSession } }) => {
+        if (freshSession) {
+          setSession(freshSession);
+          setUser(freshSession.user);
+        }
+      });
+    });
 
     return () => {
       subscription.unsubscribe();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      offEnter();
     };
   }, []);
 

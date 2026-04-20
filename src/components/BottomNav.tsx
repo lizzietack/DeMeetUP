@@ -1,6 +1,7 @@
 import { Home, Search, MessageCircle, User, Sparkles } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { haptics } from "@/platform/haptics";
 
 const tabs = [
   { icon: Home, label: "Home", path: "/" },
@@ -15,16 +16,18 @@ const BottomNav = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 glass-strong border-t border-border/50 safe-area-bottom">
-      <nav className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
+    <div className="fixed bottom-0 left-0 right-0 z-40 glass-strong border-t border-border/50 safe-bottom">
+      <nav className="flex items-stretch justify-around h-16 max-w-lg mx-auto px-2">
         {tabs.map(({ icon: Icon, label, path }) => {
           const active = location.pathname === path || 
             (path !== "/" && location.pathname.startsWith(path));
           return (
             <button
               key={path}
-              onClick={() => navigate(path)}
-              className="flex flex-col items-center gap-0.5 py-1 px-3 relative"
+              onClick={() => { haptics.selection(); navigate(path); }}
+              aria-label={label}
+              aria-current={active ? "page" : undefined}
+              className="tap-target flex-1 flex flex-col items-center justify-center gap-0.5 py-1 px-2 relative press"
             >
               {active && (
                 <motion.div
