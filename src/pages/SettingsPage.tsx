@@ -46,12 +46,12 @@ const SettingsPage = () => {
   };
 
   const handlePasswordChange = async () => {
-    if (!newPassword || !confirmPassword) {
+    if (!currentPassword || !newPassword || !confirmPassword) {
       toast.error("Please fill in all fields");
       return;
     }
-    if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -60,6 +60,15 @@ const SettingsPage = () => {
     }
     setChangingPassword(true);
     try {
+      // Verify the current password before allowing a change.
+      const { error: reAuthError } = await supabase.auth.signInWithPassword({
+        email: user?.email ?? "",
+        password: currentPassword,
+      });
+      if (reAuthError) {
+        toast.error("Current password is incorrect");
+        return;
+      }
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
       toast.success("Password updated successfully");
@@ -196,6 +205,18 @@ const SettingsPage = () => {
 
               <div className="space-y-4">
                 <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Current Password</Label>
+                  <Input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    className="bg-secondary border-border/50"
+                    autoComplete="current-password"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">New Password</Label>
                   <div className="relative">
                     <Input
@@ -204,6 +225,7 @@ const SettingsPage = () => {
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Enter new password"
                       className="bg-secondary border-border/50 pr-10"
+                      autoComplete="new-password"
                     />
                     <button
                       type="button"
@@ -238,7 +260,7 @@ const SettingsPage = () => {
 
               <Button
                 onClick={handlePasswordChange}
-                disabled={changingPassword || !newPassword || newPassword !== confirmPassword}
+                disabled={changingPassword || !currentPassword || !newPassword || newPassword !== confirmPassword}
                 className="w-full gradient-gold text-primary-foreground font-semibold rounded-xl h-11"
               >
                 {changingPassword ? "Updating…" : "Update Password"}
