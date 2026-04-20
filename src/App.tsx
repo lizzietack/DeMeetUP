@@ -74,9 +74,9 @@ const AppContent = () => {
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
         <Route path="/select-role" element={<ProtectedRoute><SelectRolePage /></ProtectedRoute>} />
         <Route path="/companion-setup" element={<ProtectedRoute><CompanionSetupPage /></ProtectedRoute>} />
-        <Route path="/discover" element={<DiscoverPage />} />
-        <Route path="/featured" element={<FeaturedPage />} />
-        <Route path="/companion/:id" element={<CompanionProfilePage />} />
+        <Route path="/discover" element={<OnboardingGuard><DiscoverPage /></OnboardingGuard>} />
+        <Route path="/featured" element={<OnboardingGuard><FeaturedPage /></OnboardingGuard>} />
+        <Route path="/companion/:id" element={<OnboardingGuard><CompanionProfilePage /></OnboardingGuard>} />
         <Route path="/chat" element={<OnboardingGuard><ChatListPage /></OnboardingGuard>} />
         <Route path="/chat/:id" element={<OnboardingGuard><ChatPage /></OnboardingGuard>} />
         <Route path="/book/:id" element={<OnboardingGuard><BookingPage /></OnboardingGuard>} />
