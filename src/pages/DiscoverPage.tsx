@@ -86,6 +86,7 @@ const DiscoverPage = () => {
   const [ethnicityFilters, setEthnicityFilters] = useState<string[]>([]);
   const [ageMin, setAgeMin] = useState(18);
   const [ageMax, setAgeMax] = useState(65);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
