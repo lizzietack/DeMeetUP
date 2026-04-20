@@ -336,7 +336,63 @@ const DiscoverPage = () => {
                   )}
                 </div>
 
-                {/* Gender */}
+                {/* Country */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Country</p>
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                    <select
+                      value={countryFilter}
+                      onChange={(e) => setCountryFilter(e.target.value)}
+                      className="w-full bg-secondary rounded-lg pl-9 pr-8 py-2 text-xs text-foreground appearance-none focus:outline-none focus:ring-1 focus:ring-gold/50"
+                    >
+                      <option value="">All countries</option>
+                      {COUNTRIES.map((c) => (
+                        <option key={c.code} value={c.country}>{c.country}</option>
+                      ))}
+                    </select>
+                    {countryFilter && (
+                      <button onClick={() => setCountryFilter("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Body Type */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Body Type</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {BODY_TYPES.map((b) => (
+                      <button
+                        key={b}
+                        onClick={() => setBodyTypeFilter(bodyTypeFilter === b ? "" : b)}
+                        className={`px-2.5 py-1 rounded-full text-xs transition-colors
+                          ${bodyTypeFilter === b ? "gradient-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+                      >
+                        {b}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Ethnicity */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Ethnicity</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ETHNICITIES.map((e) => (
+                      <button
+                        key={e}
+                        onClick={() => setEthnicityFilter(ethnicityFilter === e ? "" : e)}
+                        className={`px-2.5 py-1 rounded-full text-xs transition-colors
+                          ${ethnicityFilter === e ? "gradient-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Gender</p>
                   <div className="flex gap-2">
