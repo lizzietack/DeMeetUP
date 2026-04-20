@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X, ArrowUpDown, ChevronDown, Globe } from "lucide-react";
+import { Search, SlidersHorizontal, Sparkles, Eye, MapPin, TrendingUp, Clock, X, ArrowUpDown, ChevronDown, Globe, Link2 } from "lucide-react";
+import { toast } from "sonner";
 import CompanionCard from "@/components/CompanionCard";
 import { useCompanions } from "@/hooks/use-companions";
 import { useRecommendations } from "@/hooks/use-recommendations";
@@ -641,6 +642,21 @@ const DiscoverPage = () => {
                 onRemove={() => { setPriceMin(0); setPriceMax(1000); }}
               />
             )}
+            <button
+              onClick={async () => {
+                const url = window.location.href;
+                try {
+                  await navigator.clipboard.writeText(url);
+                  toast.success("Share link copied", { description: "Filters included in the URL" });
+                } catch {
+                  toast.error("Couldn't copy link");
+                }
+              }}
+              className="inline-flex items-center gap-1 text-[10px] font-medium text-gold hover:underline px-1.5 py-0.5 rounded-md"
+            >
+              <Link2 className="w-3 h-3" />
+              Copy share link
+            </button>
             <button onClick={clearAllFilters} className="text-[10px] text-destructive hover:underline px-1">
               Clear all
             </button>
