@@ -91,8 +91,8 @@ npm install
 Create a `.env` file in the project root:
 
 ```env
-VITE_SUPABASE_URL=https://your-project-ref.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-or-publishable-key
+VITE_SUPABASE_URL=https://clalldaxozalhzivhlzx.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsYWxsZGF4b3phbGh6aXZobHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwOTA5NTYsImV4cCI6MjA5MTY2Njk1Nn0.Omhf0YoX55fJm_qkAKf23B02z7IE8QZmV8jWlV1NvFc
 ```
 
 You can find these in your Supabase project under **Project Settings → API**.
