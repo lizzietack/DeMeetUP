@@ -86,7 +86,7 @@ const AppContent = () => {
         <Route path="/companion/:id" element={<OnboardingGuard><CompanionProfilePage /></OnboardingGuard>} />
         <Route path="/chat" element={<OnboardingGuard><ChatListPage /></OnboardingGuard>} />
         <Route path="/chat/:id" element={<OnboardingGuard><ChatPage /></OnboardingGuard>} />
-        <Route route path="/book/:id" element={<OnboardingGuard><BookingPage /></OnboardingGuard>} />
+        <Route path="/book/:id" element={<OnboardingGuard><BookingPage /></OnboardingGuard>} />
         <Route path="/dashboard" element={<OnboardingGuard><DashboardPage /></OnboardingGuard>} />
         <Route path="/profile" element={<OnboardingGuard><ProfilePage /></OnboardingGuard>} />
         <Route path="/saved-companions" element={<OnboardingGuard><SavedCompanionsPage /></OnboardingGuard>} />
