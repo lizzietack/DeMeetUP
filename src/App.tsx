@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -5,6 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import AgeVerification from "@/components/AgeVerification";
+import { storage } from "@/platform/storage";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import DiscoverPage from "./pages/DiscoverPage.tsx";
@@ -99,18 +102,38 @@ const AppContent = () => {
   );
 };
 
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
-);
+const App = () => {
+  const [ageVerified, setAgeVerified] = useState(
+    () => storage.getSync("vc_age_verified") === "true"
+  );
+
+  // Async fallback for Android WebView where sync read can miss a recent write.
+  useEffect(() => {
+    if (ageVerified) return;
+    storage.get("vc_age_verified").then((val) => {
+      if (val === "true") setAgeVerified(true);
+    });
+  }, [ageVerified]);
+
+  if (!ageVerified) {
+    return (
+      <AgeVerification onVerified={() => setAgeVerified(true)} />
+    );
+  }
+
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
+};
 
 export default App;
