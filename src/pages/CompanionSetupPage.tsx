@@ -171,6 +171,14 @@ const CompanionSetupPage = () => {
           image_url: urlData.publicUrl,
           position: i,
         });
+
+        // Also create a moderation record so admins can review/approve
+        await supabase.from("image_moderation").insert({
+          user_id: user.id,
+          image_url: urlData.publicUrl,
+          image_type: i === 0 ? "profile" : "gallery",
+          status: "pending_review" as any,
+        });
       }
 
       toast({ title: "Profile created!", description: "Your companion profile is live." });
