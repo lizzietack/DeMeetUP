@@ -13,9 +13,9 @@ const AgeVerification = ({ onVerified }: AgeVerificationProps) => {
   const [exiting, setExiting] = useState(false);
   const { user } = useAuth();
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setExiting(true);
-    void storage.set("vc_age_verified", "true");
+    await storage.set("vc_age_verified", "true");
     // For authenticated users, persist server-side so clearing storage can't bypass it.
     if (user) {
       void supabase
