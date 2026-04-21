@@ -17,7 +17,7 @@ const ProfilePage = () => {
   if (loading) {
     return (
       <div className="min-h-screen pb-20">
-        <header className="glass-strong sticky top-0 z-10">
+        <header className="glass-strong sticky top-0 z-10 safe-top">
           <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
             <Skeleton className="w-8 h-8 rounded-full" />
             <Skeleton className="h-5 w-32" />
@@ -43,7 +43,7 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen pb-20">
-      <header className="glass-strong sticky top-0 z-10">
+      <header className="glass-strong sticky top-0 z-10 safe-top">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1.5 rounded-full hover:bg-secondary transition-colors">
             <ArrowLeft className="w-5 h-5 text-foreground" />

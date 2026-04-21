@@ -99,7 +99,7 @@ const CompanionProfilePage = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
 
         {/* Top nav */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 pt-12">
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 pt-12 safe-top">
           <button onClick={() => navigate(-1)} className="w-10 h-10 glass rounded-full flex items-center justify-center">
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>

@@ -55,7 +55,7 @@ const DashboardPage = () => {
 
   return (
     <div className="min-h-screen pb-20">
-      <header className="glass-strong">
+      <header className="glass-strong safe-top">
         <div className="max-w-lg mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full gradient-purple flex items-center justify-center">

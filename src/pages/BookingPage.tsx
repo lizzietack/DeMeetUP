@@ -185,7 +185,7 @@ const BookingPage = () => {
 
   return (
     <div className="min-h-screen pb-28">
-      <header className="sticky top-0 z-30 glass-strong">
+      <header className="sticky top-0 z-30 glass-strong safe-top">
         <div className="flex items-center gap-3 px-4 py-3 max-w-lg mx-auto">
           <button onClick={() => step > 1 ? setStep(step - 1) : navigate(-1)} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary">
             <ArrowLeft className="w-5 h-5 text-foreground" />
