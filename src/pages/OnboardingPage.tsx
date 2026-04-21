@@ -30,6 +30,19 @@ type GalleryImage = {
   rejectionReason?: string | null;
 };
 
+/**
+ * Converts a File to a base64 data URL.
+ * Used instead of URL.createObjectURL() which doesn't work in Capacitor's Android WebView.
+ */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
 const OnboardingPage = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -177,7 +190,7 @@ const OnboardingPage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const preview = URL.createObjectURL(file);
+    const preview = await fileToBase64(file);
     setProfileImage({ file, preview });
     setProfileImageUploading(true);
 
@@ -212,7 +225,7 @@ const OnboardingPage = () => {
     setGalleryUploading(true);
     for (const file of files) {
       try {
-        const preview = URL.createObjectURL(file);
+        const preview = await fileToBase64(file);
         const result = await uploadAndModerate.mutateAsync({
           file,
           imageType: "gallery",
@@ -237,7 +250,7 @@ const OnboardingPage = () => {
 
   const removeGalleryImage = (index: number) => {
     setGalleryImages((prev) => {
-      if (prev[index].preview) URL.revokeObjectURL(prev[index].preview!);
+      // base64 previews don't need to be revoked
       return prev.filter((_, i) => i !== index);
     });
   };
