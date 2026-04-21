@@ -47,8 +47,45 @@ serve(async (req) => {
       throw new Error(`Failed to fetch image: ${imageResponse.status}`);
     }
 
+    const contentType = imageResponse.headers.get("content-type") || "";
     const imageBuffer = new Uint8Array(await imageResponse.arrayBuffer());
-    const image = await Image.decode(imageBuffer);
+
+    // imagescript supports PNG and JPEG only. Skip anything else (webp, gif, avif, heic...)
+    const isSupported =
+      contentType.includes("png") ||
+      contentType.includes("jpeg") ||
+      contentType.includes("jpg");
+
+    if (!isSupported) {
+      console.log(`Skipping watermark for unsupported content-type: ${contentType}`);
+      if (moderation_id) {
+        await supabase
+          .from("image_moderation")
+          .update({ ai_analysis: { watermarked: false, skipped: `unsupported: ${contentType}` } })
+          .eq("id", moderation_id);
+      }
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, reason: `Unsupported image type: ${contentType}` }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    let image;
+    try {
+      image = await Image.decode(imageBuffer);
+    } catch (decodeErr) {
+      console.error("Decode failed, skipping watermark:", decodeErr);
+      if (moderation_id) {
+        await supabase
+          .from("image_moderation")
+          .update({ ai_analysis: { watermarked: false, skipped: "decode_failed" } })
+          .eq("id", moderation_id);
+      }
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, reason: "Could not decode image" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Create watermark text overlay
     const watermarkText = "LUXE";
