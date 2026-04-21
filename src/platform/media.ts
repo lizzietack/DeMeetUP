@@ -26,7 +26,7 @@ export interface PickedMedia {
  */
 const SUPPORTED_MIMES = new Set(["image/png", "image/jpeg", "image/jpg"]);
 
-async function transcodeToJpeg(file: File): Promise<File> {
+export async function transcodeToJpeg(file: File): Promise<File> {
   if (!file.type.startsWith("image/") || SUPPORTED_MIMES.has(file.type)) {
     return file;
   }

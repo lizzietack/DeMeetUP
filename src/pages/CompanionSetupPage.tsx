@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { transcodeToJpeg } from "@/platform/media";
 import {
   ArrowRight, ArrowLeft, Camera, X, Plus, Check,
   DollarSign, Clock, Moon, Package, CalendarDays
@@ -58,17 +59,30 @@ const CompanionSetupPage = () => {
     { title: "About You", subtitle: "Final details" },
   ];
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (images.length + files.length > 8) {
       toast({ title: "Max 8 images", variant: "destructive" });
       return;
     }
-    const newImages = files.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-    setImages((prev) => [...prev, ...newImages]);
+    try {
+      // Convert HEIC/webp/avif/etc. to JPEG so all browsers can render them.
+      const converted = await Promise.all(files.map((f) => transcodeToJpeg(f)));
+      const newImages = converted.map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+      setImages((prev) => [...prev, ...newImages]);
+    } catch (err: any) {
+      toast({
+        title: "Image conversion failed",
+        description: err?.message || "Try a different photo",
+        variant: "destructive",
+      });
+    } finally {
+      // Reset so the same file can be re-picked after an error.
+      if (e.target) e.target.value = "";
+    }
   };
 
   const removeImage = (index: number) => {
@@ -223,7 +237,14 @@ const CompanionSetupPage = () => {
         <AnimatePresence mode="wait">
           {step === 0 && (
             <motion.div key="photos" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <input ref={fileInputRef} type="file" accept="image/*" multiple hidden onChange={handleImageUpload} />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.heic,.heif,.webp,.avif"
+                multiple
+                hidden
+                onChange={handleImageUpload}
+              />
               <div className="grid grid-cols-3 gap-3">
                 {images.map((img, i) => (
                   <div key={i} className="relative aspect-[3/4] rounded-xl overflow-hidden group">
