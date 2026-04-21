@@ -102,18 +102,38 @@ const AppContent = () => {
   );
 };
 
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
-);
+const App = () => {
+  const [ageVerified, setAgeVerified] = useState(
+    () => storage.getSync("vc_age_verified") === "true"
+  );
+
+  // Async fallback for Android WebView where sync read can miss a recent write.
+  useEffect(() => {
+    if (ageVerified) return;
+    storage.get("vc_age_verified").then((val) => {
+      if (val === "true") setAgeVerified(true);
+    });
+  }, [ageVerified]);
+
+  if (!ageVerified) {
+    return (
+      <AgeVerification onVerified={() => setAgeVerified(true)} />
+    );
+  }
+
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
+};
 
 export default App;
