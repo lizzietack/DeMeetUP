@@ -1,43 +1,49 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import AgeVerification from "@/components/AgeVerification";
 import HomePage from "@/pages/HomePage";
 import { storage } from "@/platform/storage";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+
+// Module-level flag — survives React re-mounts within the same app session.
+// Once the user confirms their age, this stays true until the app process ends.
+let sessionVerified = false;
 
 const Index = () => {
-  const { user } = useAuth();
-  // Sync read is fine here — it's the very first paint of the app.
+  const { profile } = useAuth();
+
+  // Initialise from the module flag or a sync localStorage read.
   const [verified, setVerified] = useState(
-    () => storage.getSync("vc_age_verified") === "true"
+    () => sessionVerified || storage.getSync("vc_age_verified") === "true"
   );
 
-  // For authenticated users, the source of truth is profiles.age_verified.
-  // Clearing localStorage should NOT bypass the gate if the server flag is false.
+  // Async fallback: on Android the sync read can miss a recently written value.
+  // Read asynchronously on mount and flip the gate if the value is there.
   useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("age_verified" as any)
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      const serverVerified = !!(data as any)?.age_verified;
-      if (serverVerified) {
-        void storage.set("vc_age_verified", "true");
+    if (verified) return;
+    storage.get("vc_age_verified").then((val) => {
+      if (val === "true") {
+        sessionVerified = true;
         setVerified(true);
-      } else {
-        // Server says not verified — force the gate regardless of localStorage.
-        setVerified(false);
       }
-    })();
-    return () => { cancelled = true; };
-  }, [user]);
+    });
+  }, [verified]);
+
+  // Also check server-side flag from the user's profile (set during onboarding).
+  useEffect(() => {
+    if (verified) return;
+    if (profile?.age_verified) {
+      sessionVerified = true;
+      setVerified(true);
+    }
+  }, [profile, verified]);
+
+  const handleVerified = () => {
+    sessionVerified = true;
+    setVerified(true);
+  };
 
   if (!verified) {
-    return <AgeVerification onVerified={() => setVerified(true)} />;
+    return <AgeVerification onVerified={handleVerified} />;
   }
 
   return <HomePage />;

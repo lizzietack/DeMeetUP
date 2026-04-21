@@ -22,6 +22,7 @@ interface Profile {
   photo_verified: boolean;
   country: string | null;
   currency: string | null;
+  age_verified?: boolean;
 }
 
 interface AuthContextType {
