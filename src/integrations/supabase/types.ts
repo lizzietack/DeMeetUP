@@ -318,6 +318,21 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          id: number
+          tips_enabled: boolean
+        }
+        Insert: {
+          id?: number
+          tips_enabled?: boolean
+        }
+        Update: {
+          id?: number
+          tips_enabled?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           age_verified: boolean
@@ -333,6 +348,7 @@ export type Database = {
           flagged_for_review: boolean
           id: string
           location: string | null
+          phone: string | null
           photo_verified: boolean
           profile_completed: boolean
           profile_visible: boolean
@@ -357,6 +373,7 @@ export type Database = {
           flagged_for_review?: boolean
           id?: string
           location?: string | null
+          phone?: string | null
           photo_verified?: boolean
           profile_completed?: boolean
           profile_visible?: boolean
@@ -381,6 +398,7 @@ export type Database = {
           flagged_for_review?: boolean
           id?: string
           location?: string | null
+          phone?: string | null
           photo_verified?: boolean
           profile_completed?: boolean
           profile_visible?: boolean
