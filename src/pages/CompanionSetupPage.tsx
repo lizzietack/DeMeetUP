@@ -54,6 +54,9 @@ const CompanionSetupPage = () => {
   const [verifiedPhone, setVerifiedPhone] = useState<string | null>(
     (profile as any)?.phone || null
   );
+  const [verifiedAt, setVerifiedAt] = useState<string | null>(
+    (profile as any)?.phone_verified_at || null
+  );
 
   const steps = [
     { title: "Photos", subtitle: "Upload your best shots" },
@@ -479,7 +482,11 @@ const CompanionSetupPage = () => {
                   <PhoneVerification
                     compact
                     currentPhone={verifiedPhone}
-                    onVerified={(p) => setVerifiedPhone(p)}
+                    verifiedAt={verifiedAt}
+                    onVerified={(p, at) => {
+                      setVerifiedPhone(p);
+                      setVerifiedAt(at);
+                    }}
                   />
                 </div>
                 {verifiedPhone && (

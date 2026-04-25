@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Phone, Check, Loader2, ArrowLeft } from "lucide-react";
+import { Phone, Check, Loader2, ArrowLeft, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,10 @@ import { toast } from "sonner";
 interface PhoneVerificationProps {
   /** The currently saved phone (E.164-ish 233XXXXXXXXX or empty) */
   currentPhone?: string | null;
+  /** ISO timestamp of when the current phone was last verified */
+  verifiedAt?: string | null;
   /** Called after a successful verification with the saved phone */
-  onVerified?: (phone: string) => void;
+  onVerified?: (phone: string, verifiedAt: string) => void;
   /** Compact (no big header) — used inside other forms like CompanionSetupPage */
   compact?: boolean;
 }
@@ -24,8 +26,25 @@ const prettyPhone = (p?: string | null) => {
   return m ? `+233 ${m[1]} ${m[2]} ${m[3]}` : p;
 };
 
+/** Friendly relative timestamp: "just now", "5 min ago", "Apr 25, 2026" */
+const formatVerifiedAt = (iso?: string | null) => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const diffMs = Date.now() - d.getTime();
+  const min = Math.floor(diffMs / 60_000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} hr ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day} day${day === 1 ? "" : "s"} ago`;
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+};
+
 export const PhoneVerification = ({
   currentPhone,
+  verifiedAt,
   onVerified,
   compact = false,
 }: PhoneVerificationProps) => {
@@ -84,7 +103,7 @@ export const PhoneVerification = ({
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || "Verification failed");
       toast.success("Phone number verified!");
-      onVerified?.(data.phone);
+      onVerified?.(data.phone, data.verified_at || new Date().toISOString());
       // Reset for next change
       setStep("enter");
       setPhone("");
@@ -106,6 +125,8 @@ export const PhoneVerification = ({
     await handleSendCode();
   };
 
+  const verifiedAtLabel = formatVerifiedAt(verifiedAt);
+
   return (
     <div className="space-y-3">
       {!compact && (
@@ -120,12 +141,32 @@ export const PhoneVerification = ({
                 ? `Verified: ${prettyPhone(currentPhone)}`
                 : "Verify your number to receive SMS booking alerts"}
             </p>
+            {currentPhone && verifiedAtLabel && (
+              <p className="text-[11px] text-muted-foreground/80 mt-0.5 flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-green-400" />
+                Last verified {verifiedAtLabel}
+              </p>
+            )}
           </div>
           {currentPhone && (
             <span className="text-[10px] bg-green-500/15 text-green-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
               <Check className="w-3 h-3" /> Verified
             </span>
           )}
+        </div>
+      )}
+
+      {compact && currentPhone && (
+        <div className="flex items-center justify-between gap-2 rounded-lg bg-green-500/10 border border-green-500/20 px-3 py-2">
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-green-400 flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5" /> Verified
+            </p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {prettyPhone(currentPhone)}
+              {verifiedAtLabel && <span> · {verifiedAtLabel}</span>}
+            </p>
+          </div>
         </div>
       )}
 

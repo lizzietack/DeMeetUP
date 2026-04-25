@@ -111,9 +111,10 @@ Deno.serve(async (req) => {
     }
 
     // ── Success: save phone to profiles, delete verification ─────────
+    const verifiedAt = new Date().toISOString()
     const { error: updateErr } = await admin
       .from('profiles')
-      .update({ phone: verif.phone })
+      .update({ phone: verif.phone, phone_verified_at: verifiedAt })
       .eq('user_id', userId)
     if (updateErr) {
       console.error('profile update error:', updateErr)
@@ -125,7 +126,7 @@ Deno.serve(async (req) => {
 
     await admin.from('phone_verifications').delete().eq('user_id', userId)
 
-    return new Response(JSON.stringify({ success: true, phone: verif.phone }), {
+    return new Response(JSON.stringify({ success: true, phone: verif.phone, verified_at: verifiedAt }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err: any) {

@@ -27,7 +27,7 @@ const useLocalToggle = (key: string, defaultValue = true) => {
 
 const SettingsPage = () => {
   const navigate = useNavigate();
-  const { signOut, user, profile } = useAuth();
+  const { signOut, user, profile, refreshProfile } = useAuth();
 
   // Theme toggle (dark is default/only for now)
   const [darkMode, setDarkMode] = useLocalToggle("theme_dark", true);
@@ -109,7 +109,11 @@ const SettingsPage = () => {
             SMS Booking Alerts
           </h2>
           <div className="px-4 py-3.5 border-t border-border/30">
-            <PhoneVerification currentPhone={(profile as any)?.phone || null} />
+            <PhoneVerification
+              currentPhone={profile?.phone || null}
+              verifiedAt={profile?.phone_verified_at || null}
+              onVerified={() => refreshProfile()}
+            />
           </div>
         </div>
 
