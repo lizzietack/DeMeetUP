@@ -25,19 +25,21 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
-    // Get companion's email from auth and phone + name from profiles table
-    const { data: userData } = await supabase.auth.admin.getUserById(companion_user_id)
-    const companionEmail = userData?.user?.email
-
+    // Get companion profile — check photo_verified status and phone
     const { data: profile } = await supabase
       .from('profiles')
-      .select('display_name, phone')
+      .select('display_name, phone, photo_verified')
       .eq('user_id', companion_user_id)
       .single()
 
     const companionName = profile?.display_name || 'there'
     const companionPhone = (profile as any)?.phone || null
+    const isVerified = (profile as any)?.photo_verified === true
     const sym = currency_symbol || 'GH₵'
+
+    // Get companion email from auth
+    const { data: userData } = await supabase.auth.admin.getUserById(companion_user_id)
+    const companionEmail = userData?.user?.email
 
     const messageBody = `Hi ${companionName}! New booking from ${guest_name}: ${service} on ${booking_date} at ${booking_time}. Total: ${sym}${total}. Open DeMeetUP to accept or decline.`
 
@@ -54,7 +56,7 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'DeMeetUP <onboarding@resend.dev>',
+            from: 'DeMeetUP <bookings@demeetup.app>',
             to: [companionEmail],
             subject: `New Booking Request from ${guest_name}`,
             html: `
@@ -84,11 +86,17 @@ Deno.serve(async (req) => {
       results.email = resendApiKey ? 'no_email_on_account' : 'RESEND_API_KEY_not_set'
     }
 
-    // ── SMS via SMSOnlineGH ───────────────────────────────────────────
+    // ── SMS via SMSOnlineGH — VERIFIED COMPANIONS ONLY ────────────────
     const smsonlineghKey = Deno.env.get('SMSONLINEGH_API_KEY')
     const smsonlineghSender = Deno.env.get('SMSONLINEGH_SENDER_ID') || 'DeMeetUP'
 
-    if (smsonlineghKey && companionPhone) {
+    if (!isVerified) {
+      results.sms = 'skipped - companion not verified'
+    } else if (!smsonlineghKey) {
+      results.sms = 'SMSONLINEGH_API_KEY_not_set'
+    } else if (!companionPhone) {
+      results.sms = 'no_phone_in_profile'
+    } else {
       try {
         // Normalise to 233XXXXXXXXX format
         let phone = companionPhone.replace(/\s+/g, '').replace(/^\+/, '')
@@ -117,8 +125,6 @@ Deno.serve(async (req) => {
       } catch (e: any) {
         results.sms = `error: ${e.message}`
       }
-    } else {
-      results.sms = smsonlineghKey ? 'no_phone_in_profile' : 'SMSONLINEGH_API_KEY_not_set'
     }
 
     return new Response(JSON.stringify({ success: true, results }), {
