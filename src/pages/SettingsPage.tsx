@@ -132,6 +132,43 @@ const SettingsPage = () => {
         {/* Push Notifications */}
         <PushNotificationSection />
 
+        {/* SMS Booking Alerts */}
+        <div className="glass rounded-xl overflow-hidden">
+          <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            SMS Booking Alerts
+          </h2>
+          <div className="px-4 py-3.5 border-t border-border/30 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                <Phone className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">Phone Number</p>
+                <p className="text-xs text-muted-foreground">
+                  Get an SMS when a guest books you
+                </p>
+              </div>
+            </div>
+            <Input
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. 0241234567 or +233241234567"
+              maxLength={20}
+              className="bg-secondary border-border/50"
+              autoComplete="tel"
+            />
+            <Button
+              onClick={handleSavePhone}
+              disabled={savingPhone || phone === ((profile as any)?.phone || "")}
+              className="w-full gradient-gold text-primary-foreground font-semibold rounded-xl h-10"
+            >
+              {savingPhone ? "Saving…" : "Save Phone Number"}
+            </Button>
+          </div>
+        </div>
+
         {/* Notification Preferences Link */}
         <div className="glass rounded-xl overflow-hidden">
           <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
