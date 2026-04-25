@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Bell, BellRing, Lock, LogOut, Moon, Globe, Eye, EyeOff, X, Check, ChevronRight, Phone } from "lucide-react";
+import { ArrowLeft, Bell, BellRing, Lock, LogOut, Moon, Globe, Eye, EyeOff, X, Check, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { storage } from "@/platform/storage";
+import { PhoneVerification } from "@/components/PhoneVerification";
 
 const useLocalToggle = (key: string, defaultValue = true) => {
   const [value, setValue] = useState(() => {
@@ -38,36 +39,6 @@ const SettingsPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
-
-  // Phone for SMS booking alerts
-  const [phone, setPhone] = useState<string>((profile as any)?.phone || "");
-  const [savingPhone, setSavingPhone] = useState(false);
-  useEffect(() => {
-    setPhone((profile as any)?.phone || "");
-  }, [profile]);
-
-  const handleSavePhone = async () => {
-    if (!user) return;
-    const trimmed = phone.trim();
-    // Basic validation: digits, +, spaces only; 7-20 chars
-    if (trimmed && !/^[+\d\s\-()]{7,20}$/.test(trimmed)) {
-      toast.error("Enter a valid phone number");
-      return;
-    }
-    setSavingPhone(true);
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ phone: trimmed || null })
-        .eq("user_id", user.id);
-      if (error) throw error;
-      toast.success(trimmed ? "Phone number saved" : "Phone number removed");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save phone");
-    } finally {
-      setSavingPhone(false);
-    }
-  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -137,35 +108,8 @@ const SettingsPage = () => {
           <h2 className="px-4 pt-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             SMS Booking Alerts
           </h2>
-          <div className="px-4 py-3.5 border-t border-border/30 space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                <Phone className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">Phone Number</p>
-                <p className="text-xs text-muted-foreground">
-                  Get an SMS when a guest books you
-                </p>
-              </div>
-            </div>
-            <Input
-              type="tel"
-              inputMode="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="e.g. 0241234567 or +233241234567"
-              maxLength={20}
-              className="bg-secondary border-border/50"
-              autoComplete="tel"
-            />
-            <Button
-              onClick={handleSavePhone}
-              disabled={savingPhone || phone === ((profile as any)?.phone || "")}
-              className="w-full gradient-gold text-primary-foreground font-semibold rounded-xl h-10"
-            >
-              {savingPhone ? "Saving…" : "Save Phone Number"}
-            </Button>
+          <div className="px-4 py-3.5 border-t border-border/30">
+            <PhoneVerification currentPhone={(profile as any)?.phone || null} />
           </div>
         </div>
 
