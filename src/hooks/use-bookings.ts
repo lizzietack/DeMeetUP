@@ -133,8 +133,39 @@ export function useCreateBooking() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ["bookings", user?.id] });
+
+      // Fire-and-forget notification to the companion (email + SMS if phone is verified)
+      try {
+        const { data: companionProfile } = await supabase
+          .from("companion_profiles")
+          .select("user_id")
+          .eq("id", data.companion_profile_id)
+          .single();
+
+        const { data: guestProfile } = await supabase
+          .from("profiles")
+          .select("display_name, currency")
+          .eq("user_id", user!.id)
+          .single();
+
+        if (companionProfile?.user_id) {
+          await supabase.functions.invoke("notify-booking", {
+            body: {
+              companion_user_id: companionProfile.user_id,
+              guest_name: guestProfile?.display_name || "A guest",
+              service: data.service,
+              booking_date: data.booking_date,
+              booking_time: data.booking_time,
+              total: data.total,
+              currency_symbol: guestProfile?.currency || "GH₵",
+            },
+          });
+        }
+      } catch (err) {
+        console.warn("[useCreateBooking] notify-booking failed:", err);
+      }
     },
   });
 }
