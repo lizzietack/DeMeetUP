@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { User, Calendar, MessageCircle, Heart, Settings, Shield, LogOut, ChevronRight, Crown, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { User, Calendar, MessageCircle, Heart, Settings, Shield, LogOut, ChevronRight, Crown, Clock, CheckCircle, XCircle, AlertCircle, Phone, MapPin } from "lucide-react";
 import { useMyBookings, useCompanionBookings, useUpdateBookingStatus } from "@/hooks/use-bookings";
 import { useConversations } from "@/hooks/use-chat";
 import { useAuth } from "@/contexts/AuthContext";
@@ -169,25 +169,49 @@ const DashboardPage = () => {
                 const config = statusConfig[booking.status] || statusConfig.pending;
                 const StatusIcon = config.icon;
                 return (
-                  <div key={booking.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {booking.companionImage && (
-                        <img src={booking.companionImage} className="w-10 h-10 rounded-xl object-cover" alt="" />
-                      )}
-                      <div>
-                        <p className="font-medium text-foreground text-sm">{booking.companionName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {booking.service} · {new Date(booking.bookingDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                        </p>
+                  <div key={booking.id} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {booking.companionImage && (
+                          <img src={booking.companionImage} className="w-10 h-10 rounded-xl object-cover" alt="" />
+                        )}
+                        <div>
+                          <p className="font-medium text-foreground text-sm">{booking.companionName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {booking.service} · {new Date(booking.bookingDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-display text-sm font-semibold text-foreground">${booking.total}</span>
+                        <span className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${config.bg} ${config.color}`}>
+                          <StatusIcon className="w-3 h-3" />
+                          {booking.status}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-display text-sm font-semibold text-foreground">${booking.total}</span>
-                      <span className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${config.bg} ${config.color}`}>
-                        <StatusIcon className="w-3 h-3" />
-                        {booking.status}
-                      </span>
-                    </div>
+                    {booking.status === "accepted" && (booking.contactPhone || booking.contactLocation) && (
+                      <div className="ml-13 pl-13 mt-2 rounded-lg bg-green-500/5 border border-green-500/20 p-2.5 space-y-1">
+                        <p className="text-[10px] uppercase tracking-wider text-green-400 font-semibold">
+                          {isCompanion ? "Guest contact" : "Companion contact"}
+                        </p>
+                        {booking.contactPhone && (
+                          <a
+                            href={`tel:${booking.contactPhone}`}
+                            className="flex items-center gap-2 text-xs text-foreground hover:text-gold transition-colors"
+                          >
+                            <Phone className="w-3 h-3 text-green-400" />
+                            {booking.contactPhone}
+                          </a>
+                        )}
+                        {booking.contactLocation && (
+                          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <MapPin className="w-3 h-3 text-green-400" />
+                            {booking.contactLocation}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
