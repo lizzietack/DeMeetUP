@@ -22,6 +22,11 @@ export interface Booking {
   companionName?: string;
   companionImage?: string;
   companionLocation?: string;
+  // Contact info — only populated for the *other* party once status === "accepted"
+  contactName?: string;
+  contactPhone?: string | null;
+  contactLocation?: string | null;
+  contactAvatar?: string | null;
 }
 
 type BookingRow = Database["public"]["Tables"]["bookings"]["Row"] & {
