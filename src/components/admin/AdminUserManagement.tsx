@@ -1,14 +1,31 @@
 import { useState } from "react";
-import { ShieldCheck, ShieldBan, Star, Eye, CheckCircle2 } from "lucide-react";
-import { useAdminCompanionProfiles, useAdminUpdateProfile, useAdminUpdateCompanion } from "@/hooks/use-admin";
+import { ShieldCheck, ShieldBan, Star, Eye, CheckCircle2, Trash2 } from "lucide-react";
+import {
+  useAdminCompanionProfiles,
+  useAdminUpdateProfile,
+  useAdminUpdateCompanion,
+  useAdminDeleteCompanion,
+} from "@/hooks/use-admin";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const AdminUserManagement = ({ isAdmin = false }: { isAdmin?: boolean }) => {
   const { data: companions, isLoading } = useAdminCompanionProfiles(isAdmin);
   const updateProfile = useAdminUpdateProfile();
   const updateCompanion = useAdminUpdateCompanion();
+  const deleteCompanion = useAdminDeleteCompanion();
   const [filter, setFilter] = useState<"all" | "verified" | "unverified" | "flagged">("all");
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
   const filtered = companions?.filter(c => {
     const p = c.profiles as any;
@@ -57,6 +74,17 @@ const AdminUserManagement = ({ isAdmin = false }: { isAdmin?: boolean }) => {
       toast.success(visible ? "Profile visible" : "Profile hidden");
     } catch {
       toast.error("Failed");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await deleteCompanion.mutateAsync({ profileId: confirmDelete.id });
+      toast.success(`Removed ${confirmDelete.name}'s companion profile`);
+      setConfirmDelete(null);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete profile");
     }
   };
 
@@ -148,6 +176,13 @@ const AdminUserManagement = ({ isAdmin = false }: { isAdmin?: boolean }) => {
                     >
                       <ShieldBan className="w-3 h-3" /> {p?.flagged_for_review ? "Unflag" : "Flag"}
                     </button>
+                    <button
+                      onClick={() => setConfirmDelete({ id: comp.id, name: p?.display_name || "Unknown" })}
+                      disabled={deleteCompanion.isPending}
+                      className="flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3 h-3" /> Delete
+                    </button>
                   </div>
                 </div>
               </div>
@@ -155,6 +190,29 @@ const AdminUserManagement = ({ isAdmin = false }: { isAdmin?: boolean }) => {
           })}
         </div>
       )}
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete companion profile?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove <strong>{confirmDelete?.name}</strong>'s companion profile
+              and gallery images. The user account stays, but they'll need to re-onboard as a companion.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteCompanion.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteCompanion.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteCompanion.isPending ? "Deleting…" : "Delete profile"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

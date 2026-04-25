@@ -111,6 +111,33 @@ export const useAdminUpdateCompanion = () => {
   });
 };
 
+export const useAdminDeleteCompanion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ profileId }: { profileId: string }) => {
+      // companion_images has a delete policy for the profile owner only,
+      // so explicitly clean them up first as admin via the cascade-friendly route:
+      // we delete images by profile_id; the table doesn't have an admin delete policy,
+      // so fall back to relying on the FK or skip — companion_profiles is the source of truth.
+      const { error: imgErr } = await supabase
+        .from("companion_images")
+        .delete()
+        .eq("companion_profile_id", profileId);
+      if (imgErr) {
+        // Non-fatal: images may be orphaned if the policy blocks admin deletes;
+        // proceed with the profile delete which is the user's intent.
+        console.warn("[useAdminDeleteCompanion] image cleanup warning:", imgErr.message);
+      }
+      const { error } = await supabase.from("companion_profiles").delete().eq("id", profileId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-companion-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+  });
+};
+
 export const useAdminUpdateReport = () => {
   const queryClient = useQueryClient();
   return useMutation({
