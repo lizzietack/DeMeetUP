@@ -50,6 +50,7 @@ const CompanionSetupPage = () => {
   const [gender, setGender] = useState("");
   const [bio, setBio] = useState("");
   const [location, setLocation] = useState(profile?.location || "");
+  const [phone, setPhone] = useState((profile as any)?.phone || "");
 
   const steps = [
     { title: "Photos", subtitle: "Upload your best shots" },
@@ -158,7 +159,7 @@ const CompanionSetupPage = () => {
       // 2. Update user profile with bio & location
       await supabase
         .from("profiles")
-        .update({ bio, location })
+        .update({ bio, location, phone: phone.trim() || null })
         .eq("user_id", user.id);
 
       // 3. Upload images
@@ -464,6 +465,24 @@ const CompanionSetupPage = () => {
                   onChange={(e) => setLocation(e.target.value)}
                   className="w-full bg-secondary rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold/50"
                 />
+              </div>
+
+              <div>
+                <label className="text-sm text-muted-foreground mb-1.5 block">
+                  Phone Number <span className="text-gold">(for SMS booking alerts)</span>
+                </label>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="e.g. 0241234567 or +233241234567"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  maxLength={20}
+                  className="w-full bg-secondary rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold/50"
+                />
+                <p className="text-muted-foreground text-xs mt-1">
+                  We'll text you when a guest books you. Optional but recommended.
+                </p>
               </div>
 
               <div>
