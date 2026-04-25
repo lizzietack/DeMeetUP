@@ -23,6 +23,8 @@ interface Profile {
   country: string | null;
   currency: string | null;
   age_verified?: boolean;
+  phone?: string | null;
+  phone_verified_at?: string | null;
 }
 
 interface AuthContextType {
