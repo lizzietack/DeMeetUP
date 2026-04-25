@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'DeMeetUP <bookings@demeetup.app>',
+            from: 'DeMeetUP <onboarding@resend.dev>',
             to: [companionEmail],
             subject: `New Booking Request from ${guest_name}`,
             html: `
