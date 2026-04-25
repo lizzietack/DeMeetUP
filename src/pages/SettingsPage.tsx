@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Bell, BellRing, Lock, LogOut, Moon, Globe, Eye, EyeOff, X, Check, ChevronRight } from "lucide-react";
+import { ArrowLeft, Bell, BellRing, Lock, LogOut, Moon, Globe, Eye, EyeOff, X, Check, ChevronRight, Phone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -26,7 +26,7 @@ const useLocalToggle = (key: string, defaultValue = true) => {
 
 const SettingsPage = () => {
   const navigate = useNavigate();
-  const { signOut, user } = useAuth();
+  const { signOut, user, profile } = useAuth();
 
   // Theme toggle (dark is default/only for now)
   const [darkMode, setDarkMode] = useLocalToggle("theme_dark", true);
@@ -38,6 +38,36 @@ const SettingsPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+
+  // Phone for SMS booking alerts
+  const [phone, setPhone] = useState<string>((profile as any)?.phone || "");
+  const [savingPhone, setSavingPhone] = useState(false);
+  useEffect(() => {
+    setPhone((profile as any)?.phone || "");
+  }, [profile]);
+
+  const handleSavePhone = async () => {
+    if (!user) return;
+    const trimmed = phone.trim();
+    // Basic validation: digits, +, spaces only; 7-20 chars
+    if (trimmed && !/^[+\d\s\-()]{7,20}$/.test(trimmed)) {
+      toast.error("Enter a valid phone number");
+      return;
+    }
+    setSavingPhone(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ phone: trimmed || null })
+        .eq("user_id", user.id);
+      if (error) throw error;
+      toast.success(trimmed ? "Phone number saved" : "Phone number removed");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save phone");
+    } finally {
+      setSavingPhone(false);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
