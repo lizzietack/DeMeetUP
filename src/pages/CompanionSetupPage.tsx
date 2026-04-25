@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { transcodeToJpeg } from "@/platform/media";
+import { PhoneVerification } from "@/components/PhoneVerification";
 import {
   ArrowRight, ArrowLeft, Camera, X, Plus, Check,
   DollarSign, Clock, Moon, Package, CalendarDays
@@ -50,7 +51,9 @@ const CompanionSetupPage = () => {
   const [gender, setGender] = useState("");
   const [bio, setBio] = useState("");
   const [location, setLocation] = useState(profile?.location || "");
-  const [phone, setPhone] = useState((profile as any)?.phone || "");
+  const [verifiedPhone, setVerifiedPhone] = useState<string | null>(
+    (profile as any)?.phone || null
+  );
 
   const steps = [
     { title: "Photos", subtitle: "Upload your best shots" },
@@ -157,9 +160,10 @@ const CompanionSetupPage = () => {
       if (profileError) throw profileError;
 
       // 2. Update user profile with bio & location
+      // (phone is written directly by the verify-phone-otp edge function)
       await supabase
         .from("profiles")
-        .update({ bio, location, phone: phone.trim() || null })
+        .update({ bio, location })
         .eq("user_id", user.id);
 
       // 3. Upload images
@@ -469,20 +473,20 @@ const CompanionSetupPage = () => {
 
               <div>
                 <label className="text-sm text-muted-foreground mb-1.5 block">
-                  Phone Number <span className="text-gold">(for SMS booking alerts)</span>
+                  Phone Number <span className="text-gold">(verified for SMS booking alerts)</span>
                 </label>
-                <input
-                  type="tel"
-                  inputMode="tel"
-                  placeholder="e.g. 0241234567 or +233241234567"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  maxLength={20}
-                  className="w-full bg-secondary rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold/50"
-                />
-                <p className="text-muted-foreground text-xs mt-1">
-                  We'll text you when a guest books you. Optional but recommended.
-                </p>
+                <div className="bg-secondary/50 rounded-xl p-3">
+                  <PhoneVerification
+                    compact
+                    currentPhone={verifiedPhone}
+                    onVerified={(p) => setVerifiedPhone(p)}
+                  />
+                </div>
+                {verifiedPhone && (
+                  <p className="text-green-400 text-xs mt-1.5 flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Verified — we'll SMS you on bookings.
+                  </p>
+                )}
               </div>
 
               <div>
