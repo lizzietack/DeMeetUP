@@ -27,7 +27,7 @@ const useLocalToggle = (key: string, defaultValue = true) => {
 
 const SettingsPage = () => {
   const navigate = useNavigate();
-  const { signOut, user, profile } = useAuth();
+  const { signOut, user, profile, refreshProfile } = useAuth();
 
   // Theme toggle (dark is default/only for now)
   const [darkMode, setDarkMode] = useLocalToggle("theme_dark", true);
@@ -112,6 +112,7 @@ const SettingsPage = () => {
             <PhoneVerification
               currentPhone={profile?.phone || null}
               verifiedAt={profile?.phone_verified_at || null}
+              onVerified={() => refreshProfile()}
             />
           </div>
         </div>
