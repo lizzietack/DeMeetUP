@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { User, Calendar, MessageCircle, Heart, Settings, Shield, LogOut, ChevronRight, Crown, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
-import { useMyBookings, useUpdateBookingStatus } from "@/hooks/use-bookings";
+import { useMyBookings, useCompanionBookings, useUpdateBookingStatus } from "@/hooks/use-bookings";
 import { useConversations } from "@/hooks/use-chat";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -17,11 +17,13 @@ const statusConfig: Record<string, { icon: any; color: string; bg: string }> = {
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { profile, signOut, user } = useAuth();
-  const { data: bookings = [], isLoading: bookingsLoading } = useMyBookings();
+  const isCompanion = profile?.role === "companion";
+  const guestBookingsQ = useMyBookings();
+  const companionBookingsQ = useCompanionBookings();
+  const bookings = isCompanion ? (companionBookingsQ.data || []) : (guestBookingsQ.data || []);
+  const bookingsLoading = isCompanion ? companionBookingsQ.isLoading : guestBookingsQ.isLoading;
   const { data: conversations = [] } = useConversations();
   const updateStatus = useUpdateBookingStatus();
-
-  const isCompanion = profile?.role === "companion";
 
   const stats = [
     { label: "Active Chats", value: conversations.length.toString(), icon: MessageCircle },
