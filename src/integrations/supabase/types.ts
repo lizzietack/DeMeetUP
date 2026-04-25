@@ -318,6 +318,30 @@ export type Database = {
           },
         ]
       }
+      phone_otps: {
+        Row: {
+          code: string
+          created_at: string | null
+          expires_at: string
+          phone: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          expires_at: string
+          phone: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          expires_at?: string
+          phone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       phone_verifications: {
         Row: {
           attempts: number
@@ -382,6 +406,7 @@ export type Database = {
           id: string
           location: string | null
           phone: string | null
+          phone_verified: boolean
           phone_verified_at: string | null
           photo_verified: boolean
           profile_completed: boolean
@@ -408,6 +433,7 @@ export type Database = {
           id?: string
           location?: string | null
           phone?: string | null
+          phone_verified?: boolean
           phone_verified_at?: string | null
           photo_verified?: boolean
           profile_completed?: boolean
@@ -434,6 +460,7 @@ export type Database = {
           id?: string
           location?: string | null
           phone?: string | null
+          phone_verified?: boolean
           phone_verified_at?: string | null
           photo_verified?: boolean
           profile_completed?: boolean
