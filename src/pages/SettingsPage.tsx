@@ -109,7 +109,10 @@ const SettingsPage = () => {
             SMS Booking Alerts
           </h2>
           <div className="px-4 py-3.5 border-t border-border/30">
-            <PhoneVerification currentPhone={(profile as any)?.phone || null} />
+            <PhoneVerification
+              currentPhone={profile?.phone || null}
+              verifiedAt={profile?.phone_verified_at || null}
+            />
           </div>
         </div>
 
