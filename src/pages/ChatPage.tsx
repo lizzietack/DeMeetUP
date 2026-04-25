@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Send, Image, MoreVertical,
-  DollarSign, ShieldBan, Flag, Mic,
+  DollarSign, ShieldBan, Flag, Mic, Phone, MapPin, ChevronRight, X,
 } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ const ChatPage = () => {
   const [showTipModal, setShowTipModal] = useState(false);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showContactSheet, setShowContactSheet] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [isRecordingMode, setIsRecordingMode] = useState(false);
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<string | null>(null);
@@ -76,6 +77,54 @@ const ChatPage = () => {
         avatar: profile?.avatar_url || "/placeholder.svg",
         isOnline: presence?.is_online || false,
         lastSeen: presence?.last_seen,
+      };
+    },
+  });
+
+  // Look for an accepted booking between current user and the other participant
+  const { data: acceptedBooking } = useQuery({
+    queryKey: ["chat-accepted-booking", conversationId, user?.id, convInfo?.otherId],
+    enabled: !!user && !!convInfo?.otherId,
+    queryFn: async () => {
+      const me = user!.id;
+      const other = convInfo!.otherId;
+      const { data: profs } = await supabase
+        .from("companion_profiles")
+        .select("id, user_id")
+        .in("user_id", [me, other]);
+      const myCp = profs?.find((p) => p.user_id === me)?.id;
+      const otherCp = profs?.find((p) => p.user_id === other)?.id;
+
+      const orParts: string[] = [];
+      if (otherCp) orParts.push(`and(guest_id.eq.${me},companion_profile_id.eq.${otherCp})`);
+      if (myCp) orParts.push(`and(guest_id.eq.${other},companion_profile_id.eq.${myCp})`);
+      if (orParts.length === 0) return null;
+
+      const { data: bookings } = await supabase
+        .from("bookings")
+        .select("id, guest_id, companion_profile_id, service, booking_date, booking_time, status")
+        .eq("status", "accepted")
+        .or(orParts.join(","))
+        .order("booking_date", { ascending: false })
+        .limit(1);
+      const b = bookings?.[0];
+      if (!b) return null;
+
+      const { data: otherProfile } = await supabase
+        .from("profiles")
+        .select("display_name, phone, location, avatar_url")
+        .eq("user_id", other)
+        .maybeSingle();
+
+      return {
+        bookingId: b.id,
+        service: b.service,
+        bookingDate: b.booking_date,
+        bookingTime: b.booking_time,
+        contactName: otherProfile?.display_name || convInfo!.name,
+        contactPhone: otherProfile?.phone || null,
+        contactLocation: otherProfile?.location || null,
+        contactAvatar: otherProfile?.avatar_url || convInfo!.avatar,
       };
     },
   });
@@ -228,6 +277,22 @@ const ChatPage = () => {
           <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
+        <>
+        {acceptedBooking && (
+          <button
+            onClick={() => setShowContactSheet(true)}
+            className="mx-4 mt-3 mb-1 flex items-center gap-3 rounded-xl border border-green-500/30 bg-green-500/5 px-3 py-2.5 text-left transition-colors hover:bg-green-500/10 flex-shrink-0"
+          >
+            <div className="w-8 h-8 rounded-full bg-green-500/15 flex items-center justify-center flex-shrink-0">
+              <Phone className="w-4 h-4 text-green-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-green-400 uppercase tracking-wider">Contact details unlocked</p>
+              <p className="text-xs text-muted-foreground truncate">Booking accepted · tap to view contact info</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          </button>
+        )}
         <VirtualMessageList
           messages={messages}
           currentUserId={user?.id || ""}
@@ -238,6 +303,7 @@ const ChatPage = () => {
           onToggleReaction={(messageId, emoji) => toggleReaction.mutate({ messageId, emoji })}
           onOpenLightbox={setLightboxSrc}
         />
+        </>
       )}
 
       {/* Input */}
@@ -313,6 +379,84 @@ const ChatPage = () => {
         reportedUserId={convInfo?.otherId || ""}
         reportedName={convInfo?.name || "User"}
       />
+
+      {/* Contact details sheet */}
+      <AnimatePresence>
+        {showContactSheet && acceptedBooking && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            onClick={() => setShowContactSheet(false)}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="glass-strong w-full max-w-md rounded-2xl p-5 space-y-4"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-green-400 font-semibold">Booking confirmed</p>
+                  <h3 className="font-display text-lg font-bold text-foreground mt-0.5">Contact details</h3>
+                </div>
+                <IconButton onClick={() => setShowContactSheet(false)} aria-label="Close">
+                  <X className="w-4 h-4" />
+                </IconButton>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <img
+                  src={acceptedBooking.contactAvatar || "/placeholder.svg"}
+                  alt=""
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <div>
+                  <p className="font-semibold text-foreground">{acceptedBooking.contactName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {acceptedBooking.service} · {new Date(acceptedBooking.bookingDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} at {acceptedBooking.bookingTime}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {acceptedBooking.contactPhone ? (
+                  <a
+                    href={`tel:${acceptedBooking.contactPhone}`}
+                    className="flex items-center gap-3 rounded-xl bg-secondary/50 hover:bg-secondary px-4 py-3 transition-colors"
+                  >
+                    <Phone className="w-4 h-4 text-green-400" />
+                    <div className="flex-1">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Phone</p>
+                      <p className="text-sm text-foreground">{acceptedBooking.contactPhone}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </a>
+                ) : (
+                  <div className="rounded-xl bg-secondary/30 px-4 py-3 text-xs text-muted-foreground">
+                    Phone number not yet shared.
+                  </div>
+                )}
+                {acceptedBooking.contactLocation && (
+                  <div className="flex items-center gap-3 rounded-xl bg-secondary/50 px-4 py-3">
+                    <MapPin className="w-4 h-4 text-green-400" />
+                    <div className="flex-1">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Location</p>
+                      <p className="text-sm text-foreground">{acceptedBooking.contactLocation}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-[10px] text-muted-foreground text-center">
+                Please respect each other's privacy. Do not share these details outside the platform.
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
