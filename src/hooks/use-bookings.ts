@@ -31,13 +31,21 @@ export interface Booking {
 
 type BookingRow = Database["public"]["Tables"]["bookings"]["Row"] & {
   companion_profiles?: {
-    profiles?: { display_name: string | null; location: string | null } | null;
+    profiles?: { display_name: string | null; location: string | null; phone?: string | null; avatar_url?: string | null } | null;
     companion_images?: { image_url: string; position: number }[];
   } | null;
-  guest_profile?: { display_name: string | null; avatar_url: string | null } | null;
+  guest_profile?: { display_name: string | null; avatar_url: string | null; phone?: string | null; location?: string | null } | null;
 };
 
 function mapBooking(row: BookingRow): Booking {
+  const isAccepted = row.status === "accepted";
+  // The "other party" depends on whose perspective the row was fetched for.
+  // - guest_profile present → fetched from companion's perspective (other = guest)
+  // - companion_profiles present → fetched from guest's perspective (other = companion)
+  const otherIsGuest = !!row.guest_profile;
+  const other = otherIsGuest
+    ? row.guest_profile
+    : row.companion_profiles?.profiles;
   return {
     id: row.id,
     guestId: row.guest_id,
@@ -58,6 +66,13 @@ function mapBooking(row: BookingRow): Booking {
       "Unknown",
     companionImage: row.companion_profiles?.companion_images?.[0]?.image_url,
     companionLocation: row.companion_profiles?.profiles?.location,
+    contactName: other?.display_name || undefined,
+    contactAvatar:
+      (otherIsGuest ? row.guest_profile?.avatar_url : row.companion_profiles?.companion_images?.[0]?.image_url) ?? null,
+    contactPhone: isAccepted ? other?.phone ?? null : null,
+    contactLocation: isAccepted
+      ? (otherIsGuest ? row.guest_profile?.location ?? null : row.companion_profiles?.profiles?.location ?? null)
+      : null,
   };
 }
 
@@ -75,7 +90,7 @@ export function useMyBookings() {
           *,
           companion_profiles (
             id,
-            profiles!companion_profiles_user_id_fkey (display_name, location),
+            profiles!companion_profiles_user_id_fkey (display_name, location, phone, avatar_url),
             companion_images (image_url, position)
           )
         `)
@@ -239,7 +254,7 @@ export function useCompanionBookings() {
       const guestIds = Array.from(new Set(rows.map((r) => r.guest_id)));
       const { data: guests } = await supabase
         .from("profiles")
-        .select("user_id, display_name, avatar_url")
+        .select("user_id, display_name, avatar_url, phone, location")
         .in("user_id", guestIds);
       const guestMap = new Map((guests || []).map((g) => [g.user_id, g]));
 
