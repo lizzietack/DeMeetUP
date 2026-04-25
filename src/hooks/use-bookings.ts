@@ -29,6 +29,7 @@ type BookingRow = Database["public"]["Tables"]["bookings"]["Row"] & {
     profiles?: { display_name: string | null; location: string | null } | null;
     companion_images?: { image_url: string; position: number }[];
   } | null;
+  guest_profile?: { display_name: string | null; avatar_url: string | null } | null;
 };
 
 function mapBooking(row: BookingRow): Booking {
@@ -46,7 +47,10 @@ function mapBooking(row: BookingRow): Booking {
     status: row.status,
     notes: row.notes,
     createdAt: row.created_at,
-    companionName: row.companion_profiles?.profiles?.display_name || "Unknown",
+    companionName:
+      row.guest_profile?.display_name ||
+      row.companion_profiles?.profiles?.display_name ||
+      "Unknown",
     companionImage: row.companion_profiles?.companion_images?.[0]?.image_url,
     companionLocation: row.companion_profiles?.profiles?.location,
   };
@@ -185,9 +189,77 @@ export function useUpdateBookingStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["companion-bookings", user?.id] });
     },
     onError: (error: any) => {
       console.error("[useUpdateBookingStatus] Failed to update booking:", error);
     },
   });
+}
+
+/**
+ * Bookings received by the currently-logged-in companion.
+ * Looks up the companion_profile owned by this user, then fetches all
+ * bookings targeting that profile, joined with the guest's profile info.
+ */
+export function useCompanionBookings() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ["companion-bookings", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      // 1. find this user's companion profile
+      const { data: cp, error: cpErr } = await supabase
+        .from("companion_profiles")
+        .select("id")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (cpErr) throw cpErr;
+      if (!cp) return [];
+
+      // 2. fetch bookings where this profile is the companion
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(`*`)
+        .eq("companion_profile_id", cp.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+
+      const rows = data || [];
+      if (rows.length === 0) return [];
+
+      // 3. fetch guest profiles in one shot
+      const guestIds = Array.from(new Set(rows.map((r) => r.guest_id)));
+      const { data: guests } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, avatar_url")
+        .in("user_id", guestIds);
+      const guestMap = new Map((guests || []).map((g) => [g.user_id, g]));
+
+      return rows.map((row) => {
+        const guest = guestMap.get(row.guest_id);
+        return mapBooking({ ...(row as any), guest_profile: guest || null });
+      });
+    },
+  });
+
+  // Realtime updates on this companion's bookings
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`companion-bookings-realtime-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["companion-bookings", user.id] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, queryClient]);
+
+  return query;
 }
