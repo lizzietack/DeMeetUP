@@ -29,6 +29,7 @@ type BookingRow = Database["public"]["Tables"]["bookings"]["Row"] & {
     profiles?: { display_name: string | null; location: string | null } | null;
     companion_images?: { image_url: string; position: number }[];
   } | null;
+  guest_profile?: { display_name: string | null; avatar_url: string | null } | null;
 };
 
 function mapBooking(row: BookingRow): Booking {
@@ -46,7 +47,10 @@ function mapBooking(row: BookingRow): Booking {
     status: row.status,
     notes: row.notes,
     createdAt: row.created_at,
-    companionName: row.companion_profiles?.profiles?.display_name || "Unknown",
+    companionName:
+      row.guest_profile?.display_name ||
+      row.companion_profiles?.profiles?.display_name ||
+      "Unknown",
     companionImage: row.companion_profiles?.companion_images?.[0]?.image_url,
     companionLocation: row.companion_profiles?.profiles?.location,
   };
