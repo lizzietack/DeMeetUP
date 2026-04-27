@@ -28,14 +28,23 @@ serve(async (req) => {
     });
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: authError } = await supabase.auth.getClaims(token);
-    if (authError || !claimsData?.claims) {
+    let user: { id: string };
+    try {
+      const { data: claimsData, error: authError } = await supabase.auth.getClaims(token);
+      if (authError || !claimsData?.claims) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      user = { id: claimsData.claims.sub as string };
+    } catch (e) {
+      // JWT expired or invalid — signal client to refresh and retry
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const user = { id: claimsData.claims.sub as string };
 
     // Fetch user's interaction history (last 50 interactions)
     const { data: interactions } = await supabase
