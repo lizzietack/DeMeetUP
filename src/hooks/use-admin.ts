@@ -138,6 +138,37 @@ export const useAdminDeleteCompanion = () => {
   });
 };
 
+export const useAdminGuestProfiles = (enabled: boolean = false) => {
+  return useQuery({
+    queryKey: ["admin-guest-profiles"],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, user_id, display_name, avatar_url, country, location, created_at, flagged_for_review, profile_visible, role")
+        .eq("role", "guest")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+};
+
+export const useAdminDeleteGuest = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      const { error } = await supabase.from("profiles").delete().eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-guest-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+  });
+};
+
 export const useAdminUpdateReport = () => {
   const queryClient = useQueryClient();
   return useMutation({
