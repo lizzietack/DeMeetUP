@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { ShieldCheck, ShieldBan, Star, Eye, CheckCircle2, Trash2 } from "lucide-react";
+import { ShieldCheck, ShieldBan, Star, Eye, CheckCircle2, Trash2, User } from "lucide-react";
 import {
   useAdminCompanionProfiles,
   useAdminUpdateProfile,
   useAdminUpdateCompanion,
   useAdminDeleteCompanion,
+  useAdminGuestProfiles,
+  useAdminDeleteGuest,
 } from "@/hooks/use-admin";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -20,12 +22,16 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const AdminUserManagement = ({ isAdmin = false }: { isAdmin?: boolean }) => {
+  const [section, setSection] = useState<"companions" | "guests">("companions");
   const { data: companions, isLoading } = useAdminCompanionProfiles(isAdmin);
   const updateProfile = useAdminUpdateProfile();
   const updateCompanion = useAdminUpdateCompanion();
   const deleteCompanion = useAdminDeleteCompanion();
+  const { data: guests, isLoading: guestsLoading } = useAdminGuestProfiles(isAdmin && section === "guests");
+  const deleteGuest = useAdminDeleteGuest();
   const [filter, setFilter] = useState<"all" | "verified" | "unverified" | "flagged">("all");
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [confirmDeleteGuest, setConfirmDeleteGuest] = useState<{ userId: string; name: string } | null>(null);
 
   const filtered = companions?.filter(c => {
     const p = c.profiles as any;
@@ -88,8 +94,35 @@ const AdminUserManagement = ({ isAdmin = false }: { isAdmin?: boolean }) => {
     }
   };
 
+  const handleDeleteGuest = async () => {
+    if (!confirmDeleteGuest) return;
+    try {
+      await deleteGuest.mutateAsync({ userId: confirmDeleteGuest.userId });
+      toast.success(`Removed ${confirmDeleteGuest.name}'s account`);
+      setConfirmDeleteGuest(null);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete guest");
+    }
+  };
+
   return (
     <div>
+      <div className="flex gap-2 mb-3">
+        {(["companions", "guests"] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setSection(s)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              section === s ? "bg-primary text-primary-foreground" : "glass text-muted-foreground"
+            }`}
+          >
+            {s === "companions" ? "Companions" : "Guests"}
+          </button>
+        ))}
+      </div>
+
+      {section === "companions" && (
+      <>
       <div className="flex gap-2 mb-4 flex-wrap">
         {(["all", "verified", "unverified", "flagged"] as const).map(f => (
           <button
@@ -213,6 +246,78 @@ const AdminUserManagement = ({ isAdmin = false }: { isAdmin?: boolean }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </>
+      )}
+
+      {section === "guests" && (
+        <div>
+          {guestsLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
+            </div>
+          ) : (guests || []).length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground text-sm">No guest accounts found</div>
+          ) : (
+            <div className="space-y-3">
+              {(guests || []).map((g: any) => (
+                <div key={g.id} className="glass rounded-xl p-4 flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-full bg-secondary overflow-hidden shrink-0">
+                    {g.avatar_url ? (
+                      <img src={g.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <User className="w-5 h-5" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-foreground truncate">
+                      {g.display_name || "Unnamed guest"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {g.location || g.country || "—"} • Joined {new Date(g.created_at).toLocaleDateString()}
+                    </p>
+                    {g.flagged_for_review && (
+                      <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded bg-destructive/20 text-destructive">
+                        Flagged
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setConfirmDeleteGuest({ userId: g.user_id, name: g.display_name || "Unnamed guest" })}
+                    disabled={deleteGuest.isPending}
+                    className="flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50 shrink-0"
+                  >
+                    <Trash2 className="w-3 h-3" /> Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <AlertDialog open={!!confirmDeleteGuest} onOpenChange={(o) => !o && setConfirmDeleteGuest(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete guest account?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently remove <strong>{confirmDeleteGuest?.name}</strong>'s profile from the platform.
+                  This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleteGuest.isPending}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteGuest}
+                  disabled={deleteGuest.isPending}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleteGuest.isPending ? "Deleting…" : "Delete guest"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
     </div>
   );
 };
