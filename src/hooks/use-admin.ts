@@ -191,6 +191,27 @@ export const useAdminDeleteGuest = () => {
   });
 };
 
+export const useAdminDeleteUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+        body: { user_id: userId },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-all-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-guest-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-companion-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+  });
+};
+
 export const useAdminInvitations = (enabled: boolean = false) => {
   return useQuery({
     queryKey: ["admin-invitations"],
