@@ -155,6 +155,28 @@ export const useAdminGuestProfiles = (enabled: boolean = false) => {
   });
 };
 
+export const useAdminAllProfiles = (enabled: boolean = false) => {
+  return useQuery({
+    queryKey: ["admin-all-profiles"],
+    enabled,
+    queryFn: async () => {
+      const [{ data: profiles, error }, { data: roles }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, user_id, display_name, avatar_url, country, location, created_at, flagged_for_review, profile_visible, role, phone, phone_verified")
+          .order("created_at", { ascending: false })
+          .limit(500),
+        supabase.from("user_roles").select("user_id, role"),
+      ]);
+      if (error) throw error;
+      const adminIds = new Set(
+        (roles || []).filter((r: any) => r.role === "admin").map((r: any) => r.user_id)
+      );
+      return (profiles || []).map((p: any) => ({ ...p, is_admin: adminIds.has(p.user_id) }));
+    },
+  });
+};
+
 export const useAdminDeleteGuest = () => {
   const queryClient = useQueryClient();
   return useMutation({

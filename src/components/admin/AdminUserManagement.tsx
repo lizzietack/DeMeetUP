@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ShieldCheck, ShieldBan, Star, Eye, CheckCircle2, Trash2, User } from "lucide-react";
 import AdminInvitesPanel from "./AdminInvitesPanel";
+import AdminAllUsersPanel from "./AdminAllUsersPanel";
 import {
   useAdminCompanionProfiles,
   useAdminUpdateProfile,
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const AdminUserManagement = ({ isAdmin = false }: { isAdmin?: boolean }) => {
-  const [section, setSection] = useState<"companions" | "guests" | "invites">("companions");
+  const [section, setSection] = useState<"all" | "companions" | "guests" | "invites">("all");
   const { data: companions, isLoading } = useAdminCompanionProfiles(isAdmin);
   const updateProfile = useAdminUpdateProfile();
   const updateCompanion = useAdminUpdateCompanion();
@@ -108,19 +109,21 @@ const AdminUserManagement = ({ isAdmin = false }: { isAdmin?: boolean }) => {
 
   return (
     <div>
-      <div className="flex gap-2 mb-3">
-        {(["companions", "guests", "invites"] as const).map(s => (
+      <div className="flex gap-2 mb-3 overflow-x-auto">
+        {(["all", "companions", "guests", "invites"] as const).map(s => (
           <button
             key={s}
             onClick={() => setSection(s)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
               section === s ? "bg-primary text-primary-foreground" : "glass text-muted-foreground"
             }`}
           >
-            {s === "companions" ? "Companions" : s === "guests" ? "Guests" : "Invitations"}
+            {s === "all" ? "All users" : s === "companions" ? "Companions" : s === "guests" ? "Guests" : "Invitations"}
           </button>
         ))}
       </div>
+
+      {section === "all" && <AdminAllUsersPanel isAdmin={isAdmin} />}
 
       {section === "invites" && <AdminInvitesPanel isAdmin={isAdmin} />}
 
