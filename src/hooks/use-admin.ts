@@ -169,6 +169,58 @@ export const useAdminDeleteGuest = () => {
   });
 };
 
+export const useAdminInvitations = (enabled: boolean = false) => {
+  return useQuery({
+    queryKey: ["admin-invitations"],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("invitations")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+};
+
+export const useAdminInviteUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { email: string; platform_role: "guest" | "companion"; grant_admin: boolean }) => {
+      const { data, error } = await supabase.functions.invoke("admin-invite-user", {
+        body: {
+          ...input,
+          redirect_to: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-invitations"] });
+    },
+  });
+};
+
+export const useAdminRevokeInvitation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const { error } = await (supabase as any)
+        .from("invitations")
+        .update({ status: "revoked" })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-invitations"] });
+    },
+  });
+};
+
 export const useAdminUpdateReport = () => {
   const queryClient = useQueryClient();
   return useMutation({
