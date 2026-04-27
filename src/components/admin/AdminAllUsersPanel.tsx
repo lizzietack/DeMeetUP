@@ -1,7 +1,19 @@
 import { useMemo, useState } from "react";
-import { Search, Shield, User as UserIcon, Sparkles } from "lucide-react";
+import { Search, Shield, User as UserIcon, Sparkles, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAdminAllProfiles } from "@/hooks/use-admin";
+import { useAdminAllProfiles, useAdminDeleteUser } from "@/hooks/use-admin";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type RoleFilter = "all" | "guest" | "companion" | "admin" | "flagged";
 
@@ -9,6 +21,20 @@ const AdminAllUsersPanel = ({ isAdmin = false }: { isAdmin?: boolean }) => {
   const { data: users, isLoading } = useAdminAllProfiles(isAdmin);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RoleFilter>("all");
+  const deleteUser = useAdminDeleteUser();
+  const { user } = useAuth();
+  const [confirm, setConfirm] = useState<{ userId: string; name: string } | null>(null);
+
+  const handleDelete = async () => {
+    if (!confirm) return;
+    try {
+      await deleteUser.mutateAsync({ userId: confirm.userId });
+      toast.success(`Removed ${confirm.name}`);
+      setConfirm(null);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to delete user");
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -122,10 +148,43 @@ const AdminAllUsersPanel = ({ isAdmin = false }: { isAdmin?: boolean }) => {
                   {new Date(u.created_at).toLocaleDateString()}
                 </p>
               </div>
+              {user?.id !== u.user_id && (
+                <button
+                  onClick={() => setConfirm({ userId: u.user_id, name: u.display_name || "this user" })}
+                  disabled={deleteUser.isPending}
+                  className="flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50 shrink-0"
+                  title="Delete user"
+                >
+                  <Trash2 className="w-3 h-3" /> Delete
+                </button>
+              )}
             </div>
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove <strong>{confirm?.name}</strong>'s account, profile,
+              companion data, messages-related rows, and login from the platform. This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteUser.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteUser.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteUser.isPending ? "Deleting…" : "Delete user"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
