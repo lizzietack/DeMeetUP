@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ShieldCheck, ShieldBan, Star, Eye, CheckCircle2, Trash2, User } from "lucide-react";
+import AdminInvitesPanel from "./AdminInvitesPanel";
 import {
   useAdminCompanionProfiles,
   useAdminUpdateProfile,
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const AdminUserManagement = ({ isAdmin = false }: { isAdmin?: boolean }) => {
-  const [section, setSection] = useState<"companions" | "guests">("companions");
+  const [section, setSection] = useState<"companions" | "guests" | "invites">("companions");
   const { data: companions, isLoading } = useAdminCompanionProfiles(isAdmin);
   const updateProfile = useAdminUpdateProfile();
   const updateCompanion = useAdminUpdateCompanion();
@@ -108,7 +109,7 @@ const AdminUserManagement = ({ isAdmin = false }: { isAdmin?: boolean }) => {
   return (
     <div>
       <div className="flex gap-2 mb-3">
-        {(["companions", "guests"] as const).map(s => (
+        {(["companions", "guests", "invites"] as const).map(s => (
           <button
             key={s}
             onClick={() => setSection(s)}
@@ -116,10 +117,12 @@ const AdminUserManagement = ({ isAdmin = false }: { isAdmin?: boolean }) => {
               section === s ? "bg-primary text-primary-foreground" : "glass text-muted-foreground"
             }`}
           >
-            {s === "companions" ? "Companions" : "Guests"}
+            {s === "companions" ? "Companions" : s === "guests" ? "Guests" : "Invitations"}
           </button>
         ))}
       </div>
+
+      {section === "invites" && <AdminInvitesPanel isAdmin={isAdmin} />}
 
       {section === "companions" && (
       <>
